@@ -37,6 +37,23 @@ jobs:
             echo "PUENTE_BOOTSTRAP_APPLIED=1" >> "$GITHUB_ENV"
           fi
 
+      - name: Normalize bootstrap transcription artifacts
+        if: env.PUENTE_BOOTSTRAP_APPLIED == '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tests/03-speicher-phasen-postausgang.js')
+          s=p.read_text(encoding='utf-8')
+          bad="rep.push('[START] '+(await page.evaluate(()=>document.querySelector('.next-step h1')?.textContent||'KEIN next-step'));"
+          good="rep.push('[START] '+(await page.evaluate(()=>document.querySelector('.next-step h1')?.textContent||'KEIN next-step')));"
+          if bad in s:
+              s=s.replace(bad,good)
+              p.write_text(s,encoding='utf-8')
+              print('Repaired tests/03 START assertion')
+          PY
+
       - name: Syntax and extraction tests
         run: |
           set -euo pipefail
