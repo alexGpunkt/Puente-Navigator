@@ -22,6 +22,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Apply direct source bootstrap when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f .deploy/direct-source.sh ]; then
+            bash .deploy/direct-source.sh
+            rm -f .deploy/direct-source.sh
+            git add -A
+            if ! git diff --cached --quiet; then
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git commit -m "Expand Puente v0.7.0 direct source [skip ci]"
+              git push origin HEAD:main
+            fi
+          fi
+
       - name: Syntax and extraction tests
         run: |
           set -euo pipefail
