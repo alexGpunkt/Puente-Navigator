@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#12385b" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1b26" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Navegador bilingüe de trámites para personas hispanohablantes en Alemania.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Puente">
+  <meta name="format-detection" content="telephone=no">
+  <title>Puente · Ayuda con trámites</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#app">Ir al contenido</a>
+
+  <header class="topbar">
+    <button id="homeBtn" class="brand-btn" type="button" aria-label="Inicio">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span class="brand-text"><strong>Puente</strong><small id="brandSubtitle">Ayuda con trámites en Alemania</small></span>
+    </button>
+    <div class="top-actions">
+      <button id="langBtn" class="chip" type="button" aria-label="Sprache wechseln / Cambiar idioma">DE</button>
+      <button id="privacyBtn" class="icon-btn" type="button" aria-label="Privacidad"><span aria-hidden="true">🔒</span></button>
+    </div>
+  </header>
+
+  <main id="app" class="app-shell" tabindex="-1"></main>
+  <p id="routeAnnouncer" class="sr-only" aria-live="polite"></p>
+
+  <nav class="bottom-nav" aria-label="Navegación">
+    <button type="button" data-route="home" class="nav-btn active"><span aria-hidden="true">🏠</span><small data-i18n="navHome">Inicio</small></button>
+    <button type="button" data-route="assistant" class="nav-btn"><span aria-hidden="true">🧭</span><small data-i18n="navAssistant">Asistente</small></button>
+    <button type="button" data-route="case" class="nav-btn"><span aria-hidden="true">📎</span><small id="caseNavLabel" data-i18n="navCase">Caso</small></button>
+    <button type="button" data-route="docs" class="nav-btn"><span aria-hidden="true">📂</span><small data-i18n="navDocs">Documentos</small></button>
+    <button type="button" data-route="lost" class="nav-btn"><span aria-hidden="true">🔥</span><small data-i18n="navLost">Perdidos</small></button>
+  </nav>
+
+  <dialog id="modal" class="modal" aria-labelledby="modalTitle">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <h2 id="modalTitle"></h2>
+        <button class="icon-btn" type="submit" value="cancel" aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
