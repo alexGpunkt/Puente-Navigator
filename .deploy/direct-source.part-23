@@ -1,0 +1,236 @@
+ia de justificantes gráficos":"Vorschau bildbasierter Nachweise"}</h2>${imageEvidence.map(d=>`<div><h3>${d.exhibit} · ${esc(d.name)}</h3><img class="appendix-image" src="${liveFiles.get(d.id).preview}" alt="${esc(d.name)}"></div>`).join("")}</section>`:""}
+    </div>`;
+  }
+
+  function dossierStandaloneHtml(){
+    const clone=document.querySelector(".dossier")?.cloneNode(true);
+    clone?.querySelectorAll(".dossier-toolbar").forEach(x=>x.remove());
+    // Blob-URLs der Bildvorschau funktionieren außerhalb des aktuellen Tabs nicht.
+    // Im eigenständigen HTML/ZIP bleibt deshalb der Nachweisindex erhalten; die Originaldateien liegen im ZIP-Ordner Nachweise/.
+    clone?.querySelectorAll(".appendix-image").forEach(img=>{const note=document.createElement("p");note.className="notice";note.textContent=state.lang==="es"?"Vista previa omitida en el HTML exportado. Utiliza el archivo original del directorio Nachweise/.":"Bildvorschau im exportierten HTML ausgelassen. Bitte die Originaldatei im Ordner Nachweise/ verwenden.";img.replaceWith(note);});
+    const css=[...document.styleSheets].map(ss=>{try{return [...ss.cssRules].map(r=>r.cssText).join("\n")}catch(_){return ""}}).join("\n");
+    return `<!doctype html><html lang="${state.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Puente Fallakte</title><style>${css}</style></head><body><main class="app-shell">${clone?clone.outerHTML:""}</main></body></html>`;
+  }
+
+  function downloadDossierHtml(){
+    const html=dossierStandaloneHtml(), blob=new Blob([html],{type:"text/html;charset=utf-8"});
+    const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`Puente_Fallakte_${new Date().toISOString().slice(0,10)}.html`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+
+  async function exportSubmissionPackage(){
+    const btn=document.querySelector("#exportPackageBtn");const old=btn?.textContent;
+    try{
+      if(btn){btn.disabled=true;btn.textContent=state.lang==="es"?"Preparando ZIP…":"ZIP wird erstellt…";}
+      await ensureJsZip();
+      const zip=new JSZip(), evidence=dossierEvidence();
+      zip.file("00_Fallakte.html",dossierStandaloneHtml());
+      const payload={version:APP_DATA.meta.version,exportedAt:new Date().toISOString(),service:dossierService(),profile:state.profile,statuses:state.statuses,approvedFacts:docSession.approvedFacts,formValues,documents:evidence.map(({id,name,mime,type,typeConfidence,status,facts,exhibit})=>({id,name,mime,type,typeConfidence,status,exhibit,facts:facts?.map(({key,value,confidence})=>({key,value,confidence}))}))};
+      zip.file("00_Falldaten.json",JSON.stringify(payload,null,2));
+      const missing=[];
+      for(const d of evidence){
+        const live=liveFiles.get(d.id);if(!live?.file){missing.push(`${d.exhibit} · ${d.name}`);continue;}
+        const safe=String(d.name||"dokument").replace(/[\\/:*?\"<>|]+/g,"_");
+        zip.file(`Nachweise/${d.exhibit}_${safe}`,live.file);
+      }
+      const reqs=dossierRequirements(dossierService());
+      const checklist=reqs.map(r=>`${r.status==="have"?"[x]":"[ ]"} ${tx(r.doc?.title)||r.id} — ${r.kind}`).join("\n");
+      zip.file("01_Checkliste.txt",checklist);
+      if(missing.length)zip.file("HINWEIS_FEHLENDE_ORIGINALDATEIEN.txt",`${state.lang==="es"?"Estos archivos ya no están disponibles en la memoria de la pestaña y no se pudieron incluir":"Diese Originaldateien sind im aktuellen Tab nicht mehr verfügbar und konnten nicht beigefügt werden"}:\n\n${missing.join("\n")}`);
+      const blob=await zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:6}});
+      const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`Puente_Antragssatz_${new Date().toISOString().slice(0,10)}.zip`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+    }catch(err){toast(L("No se pudo crear el ZIP: ","ZIP konnte nicht erstellt werden: ")+(err?.message||err));}
+    finally{if(btn){btn.disabled=false;btn.textContent=old;}}
+  }
+
+  function docsView(){
+    return `<div class="service-head"><div class="big-icon">🔎</div><div><h1>${tr("docsTitle")}</h1><p>${tr("docsSub")}</p></div></div>
+      <input id="docSearch" class="searchbox" type="search" placeholder="${tr("searchPlaceholder")}" autocomplete="off">
+      <div id="docResults" class="requirements">${docsList(Object.keys(APP_DATA.documents))}</div>`;
+  }
+
+  function docsList(ids){
+    if(!ids.length) return `<div class="empty">${tr("noResults")}</div>`;
+    return ids.filter(id=>APP_DATA.documents[id]).map(id=>{
+      const d=APP_DATA.documents[id];
+      return `<article class="req clickable" data-recovery="${id}" tabindex="0" role="button">
+        <div class="req-top"><div class="req-icon">${d.icon}</div><div class="req-main"><h3>${tx(d.title)}</h3><p>${tx(d.desc)}</p></div></div>
+        <div class="meta"><span class="badge">${d.recovery.length} ${state.lang==="es"?"rutas":"Wege"}</span></div></article>`;
+    }).join("");
+  }
+
+  function lostView(){
+    return `<div class="service-head"><div class="big-icon">🔥</div><div><h1>${tr("lostTitle")}</h1><p>${tr("lostSub")}</p></div></div>
+      <div class="notice danger">${tr("lostIntro")}</div>
+      <section class="requirements lost-priority">
+        ${APP_DATA.lostPriority.map(id=>{
+          const d=APP_DATA.documents[id];
+          return `<article class="req lost-item"><h3>${tx(d.title)}</h3><p>${tx(d.desc)}</p>
+            <div class="req-actions"><button class="secondary-btn" data-recovery="${id}">🧭 ${tr("how")}</button>
+            ${statusButton(id,"have","✓",tr("statusHave"),state.statuses[id]||"")}
+            ${statusButton(id,"missing","✕",tr("statusMissing"),state.statuses[id]||"")}</div></article>`;
+        }).join("")}
+      </section>
+      <div class="notice warning">${state.lang==="es"
+        ?"Consejo: aunque falten justificantes de Grundsicherungsgeld, la solicitud puede presentarse y los justificantes pueden entregarse posteriormente."
+        :"Tipp: Auch wenn Nachweise für Grundsicherungsgeld fehlen, kann der Antrag gestellt und die Nachweise später nachgereicht werden."}</div>`;
+  }
+
+  function progressView(){
+    const entries=Object.entries(state.statuses).filter(([id])=>APP_DATA.documents[id]);
+    const grouped={have:[],unsure:[],missing:[]};
+    entries.forEach(([id,st])=>grouped[st]?.push(id));
+    return `<div class="service-head"><div class="big-icon">✅</div><div><h1>${tr("currentStatus")}</h1><p>${tr("privacyShort")}</p></div></div>
+      ${entries.length?`${progressGroup("✅",tr("statusHave"),grouped.have)}
+        ${progressGroup("❓",tr("statusUnsure"),grouped.unsure)}
+        ${progressGroup("❌",tr("statusMissing"),grouped.missing)}
+        <div class="toolbar"><button id="printBtn" class="secondary-btn">🖨️ ${tr("print")}</button><button id="resetBtn" class="danger-btn">🗑️ ${tr("reset")}</button></div>`
+      :`<div class="empty">${tr("noCase")}</div>`}`;
+  }
+
+  function progressGroup(icon,title,ids){
+    if(!ids.length) return "";
+    return `<div class="section-title"><div><h2>${icon} ${title}</h2></div></div><div class="requirements">
+      ${ids.filter(id=>APP_DATA.documents[id]).map(id=>{const d=APP_DATA.documents[id];return `<article class="req clickable" data-recovery="${id}" tabindex="0" role="button">
+      <div class="req-top"><div class="req-icon">${d.icon}</div><div class="req-main"><h3>${tx(d.title)}</h3><p>${tx(d.desc)}</p></div></div></article>`}).join("")}</div>`;
+  }
+
+  function sourcesBlock(){
+    return `<div class="section-title"><div><h2>${tr("sources")}</h2></div></div><div class="source-list">
+      ${APP_DATA.sources.map(s=>`<a href="${s.url}" target="_blank" rel="noopener">${esc(tx(s.label))} ↗</a>`).join("")}</div>`;
+  }
+
+  function openRecovery(id){
+    const d=APP_DATA.documents[id]; if(!d) return;
+    $("#modalTitle").textContent=`${d.icon} ${tx(d.title)}`;
+    $("#modalBody").innerHTML=`<p>${esc(tx(d.desc))}</p><div class="recovery-steps">
+      ${[...d.recovery].sort((a,b)=>a.level-b.level).map(step=>`<div class="step"><div class="level l${step.level}">${step.level}</div><div>
+      <h4>${complexityLabel(step.level)}</h4><p>${esc(step[state.lang])}</p>
+      ${step.url?`<a href="${step.url}" target="_blank" rel="noopener">${tr("openOfficial")} ↗</a>`:""}</div></div>`).join("")}</div>
+      ${d.requestTarget?`<div class="toolbar"><button type="button" class="secondary-btn" id="makeRequest" data-doc="${id}">✉️ ${tr("copyRequest")}</button></div>`:""}`;
+    $("#modal").showModal();
+    $("#makeRequest")?.addEventListener("click",()=>copyRequest(id));
+  }
+
+  function complexityLabel(level){
+    const x=state.lang==="es"
+      ?["","Nivel 1 · inmediato","Nivel 2 · contacto sencillo","Nivel 3 · trámite oficial","Nivel 4 · apoyo recomendado"]
+      :["","Stufe 1 · sofort","Stufe 2 · einfache Anfrage","Stufe 3 · Behördengang","Stufe 4 · Beratung sinnvoll"];
+    return x[level];
+  }
+
+  async function copyRequest(id){
+    const d=APP_DATA.documents[id];
+    const es=`Asunto: Solicitud de copia / justificante
+
+Buenos días:
+Necesito ${tx(d.title)} para un trámite administrativo en Alemania. Mis documentos anteriores ya no están disponibles. ¿Podrían indicarme cómo obtener una copia o un nuevo justificante?
+
+Muchas gracias.`;
+    const de=`Betreff: Bitte um Kopie / Nachweis
+
+Sehr geehrte Damen und Herren,
+ich benötige ${d.title.de} für einen Behördenantrag. Meine bisherigen Unterlagen sind nicht mehr verfügbar. Bitte teilen Sie mir mit, wie ich eine Kopie beziehungsweise einen neuen Nachweis erhalten kann.
+
+Vielen Dank.`;
+    const text=`${es}\n\n--- DEUTSCH ---\n\n${de}`;
+    try{
+      await navigator.clipboard.writeText(text);
+      const btn=$("#makeRequest"); if(btn) btn.textContent=`✓ ${tr("copied")}`;
+      toast(tr("copied"));
+    }catch(_){
+      // Zwischenablage nur in sicheren Kontexten (https/localhost) verfuegbar.
+      const ta=document.createElement("textarea");
+      ta.className="manual-text"; ta.value=text; ta.readOnly=true;
+      $("#modalBody")?.appendChild(ta); ta.focus(); ta.select();
+      toast(L("Copia el texto manualmente.","Text bitte manuell kopieren."));
+    }
+  }
+
+  function openMoreSheet(){
+    const items=[
+      {route:"advice",  icon:"🤝", title:L("Dónde encontrar asesoría","Wo es Beratung gibt"), sub:L("Servicios gratuitos y confidenciales","Kostenlose, vertrauliche Stellen")},
+      {route:"docs",    icon:"🔎", title:tr("docsTitle"), sub:tr("docsSub")},
+      {route:"lost",    icon:"🔥", title:tr("lostTitle"), sub:tr("lostSub")},
+      ...(FEATURES?.hasPreparedValues()?[{route:"fill", icon:"🖊️", title:L("Rellenar el formulario oficial","Amtliches Formular ausfüllen"), sub:L("Escribir los valores en el PDF","Werte in das PDF schreiben")}]:[]),
+      {route:"dossier", icon:"📑", title:L("Expediente imprimible","Druckfertige Fallakte"), sub:L("Para llevar a la asesoría o a la oficina","Zum Mitnehmen in Beratung oder Amt")},
+      {route:"outbox",  icon:"📮", title:L("Libro de envíos","Postausgangsbuch"), sub:L("Qué se entregó, cuándo y cómo","Was wann und wie eingereicht wurde")},
+      {route:"household",icon:"👪", title:L("Comunidad de necesidad","Bedarfsgemeinschaft"), sub:L("Personas del hogar y sus anexos","Personen im Haushalt und ihre Anlagen")},
+      {route:"progress",icon:"✅", title:tr("currentStatus"), sub:tr("privacyShort")},
+      {route:"settings",icon:"⚙️", title:L("Ajustes y privacidad","Einstellungen und Datenschutz"), sub:L("Conservación de datos y voz","Datenhaltung und Sprache")}
+    ];
+    $("#modalTitle").textContent=tr("navMore");
+    $("#modalBody").innerHTML=`<div class="more-list">
+      ${items.map(i=>`<button type="button" class="more-item" data-more-route="${i.route}">
+        <span class="more-icon" aria-hidden="true">${i.icon}</span>
+        <span><strong>${esc(i.title)}</strong><small>${esc(i.sub)}</small></span>
+      </button>`).join("")}
+    </div>
+    `;
+    $("#modal").showModal();
+    $$(`[data-more-route]`).forEach(el=>el.addEventListener("click",()=>{
+      $("#modal").close(); setRoute(el.dataset.moreRoute);
+    }));
+
+  }
+
+  function showPrivacy(){
+    $("#modalTitle").textContent=tr("privacyTitle");
+    $("#modalBody").innerHTML=`<p>${tr("privacyBody")}</p>
+      <div class="notice">${state.lang==="es"
+        ?"v0.3 guarda la clasificación localmente. Documentos, OCR y datos extraídos permanecen solo en esta sesión y no se suben a Puente. Para OCR/PDF se descargan librerías del navegador desde CDN cuando se necesitan."
+        :"v0.3 speichert die Einordnung lokal. Dokumente, OCR und erkannte Angaben bleiben nur in dieser Sitzung und werden nicht an Puente hochgeladen. Für OCR/PDF werden bei Bedarf Browser-Bibliotheken von einem CDN geladen."}</div>
+      <div class="notice">${tr("legalNote")}</div>
+      <button type="button" class="danger-btn" id="modalReset">🗑️ ${tr("reset")}</button>`;
+    $("#modal").showModal();
+    $("#modalReset").addEventListener("click",resetAll);
+  }
+
+  async function resetAll(){
+    if(!confirm(tr("resetConfirm"))) return;
+    liveFiles.forEach(x=>{ if(x.url) URL.revokeObjectURL(x.url); });
+    liveFiles.clear();
+    releaseOcrWorker();
+    await Storage.clearAll();
+    bindStorageObjects({...defaultState, lang:state.lang});
+    if($("#modal").open) $("#modal").close();
+    render();
+  }
+
+  /** Verbindet die Arbeitsvariablen mit den Objekten im Speichermodul. */
+  function bindStorageObjects(initialState){
+    Storage.app.state = normalizeState(initialState ?? Storage.app.state);
+    state = Storage.app.state;
+    formValues = Storage.personal.formValues;
+    docSession = Storage.personal.docSession;
+    Storage.save("app"); Storage.save("personal");
+  }
+
+  // Zusatzmodule aus features.js. Der Kontext liefert lebende Referenzen,
+  // damit das Modul denselben Zustand sieht wie der Rest der App.
+  const FEATURES = (typeof window.PuenteFeatures === "function")
+    ? window.PuenteFeatures({
+        lang:()=>state.lang, esc, tx, L, toast, render, setRoute,
+        findDoc:id=>docSession.docs.find(d=>d.id===id),
+        services:()=>{
+          const p=state.profile||{};
+          const goal=p.goal;
+          if(goal==="grundsicherung") return ["grundsicherung"];
+          if(goal==="wohngeld") return ["wohngeld"];
+          return ["grundsicherung","wohngeld"];
+        },
+        formRows:()=>dossierFormRows(dossierService()),
+        facts:dossierFacts,
+        personName:dossierPersonName
+      })
+    : null;
+
+  const VOICE = (typeof window.PuenteVoice === "function")
+    ? window.PuenteVoice({
+        lang:()=>state.lang, esc, toast,
+        settings:()=>state.settings,
+        saveSettings:saveState,
+        onSpeakChange:on=>{ const b=$("#readBtn"); if(b){ b.classList.toggle("speaking",on); b.setAttribute("aria-pressed",String(on)); } }
+      })
+    : null;
+
+  function bin
