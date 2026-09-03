@@ -1,0 +1,422 @@
+_15_24",
+        "label": {
+          "es": "Hijo/a 15–24, soltero/a",
+          "de": "Unverheiratetes Kind 15–24"
+        }
+      },
+      {
+        "value": "relatives",
+        "label": {
+          "es": "Otros familiares",
+          "de": "Andere Verwandte"
+        }
+      },
+      {
+        "value": "wg",
+        "label": {
+          "es": "WG / personas no familiares",
+          "de": "WG / nicht verwandte Personen"
+        }
+      }
+    ]
+  },
+  {
+    "id": "citizenship",
+    "type": "single",
+    "title": {
+      "es": "¿Qué situación de nacionalidad tiene?",
+      "de": "Welche Staatsangehörigkeitssituation liegt vor?"
+    },
+    "help": {
+      "es": "La lengua española no significa automáticamente ciudadanía española o de la UE.",
+      "de": "Spanische Sprache bedeutet nicht automatisch spanische oder EU-Staatsangehörigkeit."
+    },
+    "options": [
+      {
+        "value": "german",
+        "label": {
+          "es": "Alemana",
+          "de": "Deutsch"
+        }
+      },
+      {
+        "value": "eu",
+        "label": {
+          "es": "UE/EEE/Suiza",
+          "de": "EU/EWR/Schweiz"
+        }
+      },
+      {
+        "value": "non_eu",
+        "label": {
+          "es": "Tercer país / no UE",
+          "de": "Drittstaat / nicht EU"
+        }
+      },
+      {
+        "value": "unknown",
+        "label": {
+          "es": "No está claro",
+          "de": "Unklar"
+        }
+      }
+    ]
+  },
+  {
+    "id": "workability",
+    "type": "single",
+    "title": {
+      "es": "¿Puede trabajar normalmente al menos 3 horas al día?",
+      "de": "Kann die Person grundsätzlich mindestens 3 Stunden täglich arbeiten?"
+    },
+    "help": {
+      "es": "Esta pregunta es importante para la ruta del Jobcenter. No sustituye una valoración médica.",
+      "de": "Diese Frage ist für den Jobcenter-Weg wichtig und ersetzt keine medizinische Beurteilung."
+    },
+    "options": [
+      {
+        "value": "yes",
+        "label": {
+          "es": "Sí",
+          "de": "Ja"
+        }
+      },
+      {
+        "value": "no",
+        "label": {
+          "es": "No",
+          "de": "Nein"
+        }
+      },
+      {
+        "value": "unknown",
+        "label": {
+          "es": "No está claro",
+          "de": "Unklar"
+        }
+      }
+    ]
+  },
+  {
+    "id": "income",
+    "type": "multi",
+    "title": {
+      "es": "¿Qué ingresos existen actualmente?",
+      "de": "Welche aktuellen Einnahmen gibt es?"
+    },
+    "help": {
+      "es": "Marca todas las opciones. 'Ninguno' borra las demás.",
+      "de": "Alle zutreffenden Optionen wählen. 'Keine' schließt die anderen aus."
+    },
+    "exclusive": [
+      "none"
+    ],
+    "options": [
+      {
+        "value": "employment",
+        "label": {
+          "es": "Salario / Minijob",
+          "de": "Arbeitslohn / Minijob"
+        }
+      },
+      {
+        "value": "self_employed",
+        "label": {
+          "es": "Trabajo autónomo",
+          "de": "Selbständig / freiberuflich"
+        }
+      },
+      {
+        "value": "alg1",
+        "label": {
+          "es": "Arbeitslosengeld I",
+          "de": "Arbeitslosengeld I"
+        }
+      },
+      {
+        "value": "pension",
+        "label": {
+          "es": "Pensión / Rente",
+          "de": "Rente / Pension"
+        }
+      },
+      {
+        "value": "other",
+        "label": {
+          "es": "Otros ingresos",
+          "de": "Andere Einnahmen"
+        }
+      },
+      {
+        "value": "none",
+        "label": {
+          "es": "Ningún ingreso",
+          "de": "Keine Einnahmen"
+        }
+      }
+    ]
+  },
+  {
+    "id": "housing_transfer",
+    "type": "single",
+    "title": {
+      "es": "¿Recibe ya una prestación que incluye los gastos de vivienda?",
+      "de": "Wird bereits eine Leistung bezogen, die Unterkunftskosten berücksichtigt?"
+    },
+    "help": {
+      "es": "Esto es especialmente importante antes de recomendar Wohngeld.",
+      "de": "Das ist besonders wichtig, bevor Wohngeld empfohlen wird."
+    },
+    "options": [
+      {
+        "value": "no",
+        "label": {
+          "es": "No",
+          "de": "Nein"
+        }
+      },
+      {
+        "value": "sgb2",
+        "label": {
+          "es": "Grundsicherungsgeld / Bürgergeld",
+          "de": "Grundsicherungsgeld / Bürgergeld"
+        }
+      },
+      {
+        "value": "sgb12",
+        "label": {
+          "es": "Sozialhilfe / Grundsicherung SGB XII",
+          "de": "Sozialhilfe / Grundsicherung SGB XII"
+        }
+      },
+      {
+        "value": "asyl",
+        "label": {
+          "es": "Asylbewerberleistungen",
+          "de": "Asylbewerberleistungen"
+        }
+      },
+      {
+        "value": "unknown",
+        "label": {
+          "es": "No está claro",
+          "de": "Unklar"
+        }
+      }
+    ]
+  },
+  {
+    "id": "education",
+    "type": "single",
+    "title": {
+      "es": "¿Estudia o está en formación profesional?",
+      "de": "Schule, Studium oder Ausbildung?"
+    },
+    "help": {
+      "es": "BAföG/BAB puede afectar especialmente a Wohngeld y Grundsicherungsgeld.",
+      "de": "BAföG/BAB kann insbesondere Wohngeld und Grundsicherungsgeld beeinflussen."
+    },
+    "options": [
+      {
+        "value": "none",
+        "label": {
+          "es": "No",
+          "de": "Nein"
+        }
+      },
+      {
+        "value": "student",
+        "label": {
+          "es": "Escuela / universidad",
+          "de": "Schule / Studium"
+        }
+      },
+      {
+        "value": "training",
+        "label": {
+          "es": "Ausbildung",
+          "de": "Ausbildung"
+        }
+      },
+      {
+        "value": "unknown",
+        "label": {
+          "es": "No está claro",
+          "de": "Unklar"
+        }
+      }
+    ]
+  },
+  {
+    "id": "special",
+    "type": "multi",
+    "title": {
+      "es": "¿Hay alguna situación especial?",
+      "de": "Gibt es eine besondere Lebenssituation?"
+    },
+    "help": {
+      "es": "Estas respuestas activan anexos o comprobantes adicionales.",
+      "de": "Diese Antworten aktivieren zusätzliche Anlagen oder Nachweise."
+    },
+    "options": [
+      {
+        "value": "separated",
+        "label": {
+          "es": "Separado/a o divorciado/a",
+          "de": "Getrennt / geschieden"
+        }
+      },
+      {
+        "value": "pregnant",
+        "label": {
+          "es": "Embarazo",
+          "de": "Schwangerschaft"
+        }
+      },
+      {
+        "value": "single_parent",
+        "label": {
+          "es": "Familia monoparental",
+          "de": "Alleinerziehend"
+        }
+      },
+      {
+        "value": "special_diet",
+        "label": {
+          "es": "Dieta médica costosa",
+          "de": "Kostenaufwändige Ernährung"
+        }
+      },
+      {
+        "value": "disability",
+        "label": {
+          "es": "Discapacidad / Pflegegrad",
+          "de": "Behinderung / Pflegegrad"
+        }
+      },
+      {
+        "value": "special_need",
+        "label": {
+          "es": "Necesidad especial inevitable",
+          "de": "Unabweisbarer besonderer Bedarf"
+        }
+      },
+      {
+        "value": "institution",
+        "label": {
+          "es": "Hospital / institución / prisión",
+          "de": "Stationäre Einrichtung"
+        }
+      },
+      {
+        "value": "accident",
+        "label": {
+          "es": "Daño causado por otra persona",
+          "de": "Unfall/Schaden durch Dritte"
+        }
+      },
+      {
+        "value": "under25_parent_outside",
+        "label": {
+          "es": "Menor de 25 y progenitor fuera de la BG",
+          "de": "Unter 25, Elternteil außerhalb BG"
+        }
+      }
+    ]
+  },
+  {
+    "id": "history",
+    "type": "multi",
+    "title": {
+      "es": "¿Qué ocurrió en los últimos años?",
+      "de": "Was traf in den letzten Jahren zu?"
+    },
+    "help": {
+      "es": "El Hauptantrag del Jobcenter pregunta por prestaciones de 3 años y situaciones de 5 años.",
+      "de": "Der Jobcenter-Hauptantrag fragt nach Leistungsbezug der letzten 3 Jahre und Lebenssituationen der letzten 5 Jahre."
+    },
+    "options": [
+      {
+        "value": "benefits3y",
+        "label": {
+          "es": "Bürgergeld/Sozialhilfe últimos 3 años",
+          "de": "Bürgergeld/Sozialhilfe letzte 3 Jahre"
+        }
+      },
+      {
+        "value": "employment5y",
+        "label": {
+          "es": "Empleo últimos 5 años",
+          "de": "Beschäftigung letzte 5 Jahre"
+        }
+      },
+      {
+        "value": "self5y",
+        "label": {
+          "es": "Autónomo/a últimos 5 años",
+          "de": "Selbständig letzte 5 Jahre"
+        }
+      },
+      {
+        "value": "replacement5y",
+        "label": {
+          "es": "ALG/Krankengeld/etc. últimos 5 años",
+          "de": "ALG/Krankengeld usw. letzte 5 Jahre"
+        }
+      },
+      {
+        "value": "care5y",
+        "label": {
+          "es": "Cuidado de familiares",
+          "de": "Angehörige gepflegt"
+        }
+      },
+      {
+        "value": "service5y",
+        "label": {
+          "es": "Servicio voluntario/militar",
+          "de": "Freiwilligen-/Wehrdienst"
+        }
+      }
+    ]
+  }
+];
+APP_DATA.formMaps = {
+  "grundsicherung": {
+    "title": {
+      "es": "Preparación de formularios Jobcenter",
+      "de": "Formularvorbereitung Jobcenter"
+    },
+    "forms": [
+      {
+        "id": "HA",
+        "title": {
+          "es": "HA · Hauptantrag 04/2026",
+          "de": "HA · Hauptantrag 04/2026"
+        },
+        "source": "https://www.arbeitsagentur.de/datei/antrag-sgb2_ba042689.pdf",
+        "fields": [
+          {
+            "no": "1",
+            "title": {
+              "es": "Nombre",
+              "de": "Vorname"
+            },
+            "when": "always"
+          },
+          {
+            "no": "2",
+            "title": {
+              "es": "Apellido(s)",
+              "de": "Nachname"
+            },
+            "when": "always"
+          },
+          {
+            "no": "3",
+            "title": {
+              "es": "Fecha de nacimiento",
+              "de": "Geburtsdatum"
+            },
+            "when": "always"
+    
