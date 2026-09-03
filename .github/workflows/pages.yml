@@ -26,9 +26,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ -f .deploy/direct-source.sh ]; then
+          APPLIED=0
+          if compgen -G '.deploy/direct-source.part-*' > /dev/null; then
+            cat .deploy/direct-source.part-* > /tmp/direct-source.sh
+            bash /tmp/direct-source.sh
+            rm -f .deploy/direct-source.part-* .deploy/direct-source.sh
+            APPLIED=1
+          elif [ -f .deploy/direct-source.sh ]; then
             bash .deploy/direct-source.sh
             rm -f .deploy/direct-source.sh
+            APPLIED=1
+          fi
+          if [ "$APPLIED" = 1 ]; then
             git add -A
             if ! git diff --cached --quiet; then
               git config user.name "github-actions[bot]"
