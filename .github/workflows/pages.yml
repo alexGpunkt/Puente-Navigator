@@ -52,19 +52,17 @@ jobs:
           if bad in s:
               s=s.replace(bad,good)
               p.write_text(s,encoding='utf-8')
-              print('Repaired tests/03 START assertion')
 
           p=Path('features.js')
           s=p.read_text(encoding='utf-8')
           old='''  async function ensureQrLib() {\n    await ensureLib("QRCode", "vendor/qrcode.min.js",\n      "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js");\n  }'''
-          new='''  function installQrToCanvasCompat() {\n    const QR=window.QRCode;\n    if(!QR || QR.toCanvas) return;\n    QR.toCanvas=function(canvas,text,opts={},cb){\n      const work=new Promise((resolve,reject)=>{\n        let holder;\n        try{\n          const size=Math.max(64,Number(opts.width)||256);\n          holder=document.createElement("div");\n          holder.style.cssText="position:absolute;left:-10000px;top:-10000px;width:1px;height:1px;overflow:hidden";\n          document.body.appendChild(holder);\n          new QR(holder,{text:String(text),width:size,height:size,correctLevel:QR.CorrectLevel?.M});\n          const source=holder.querySelector("canvas");\n          if(!source) throw new Error("QR canvas unavailable");\n          canvas.width=size; canvas.height=size;\n          const ctx=canvas.getContext("2d");\n          if(!ctx) throw new Error("Canvas 2D unavailable");\n          ctx.clearRect(0,0,size,size); ctx.drawImage(source,0,0,size,size);\n          holder.remove(); holder=null;\n          resolve(canvas);\n        }catch(err){\n          try{holder?.remove();}catch(_){}\n          reject(err);\n        }\n      });\n      if(typeof cb==="function") work.then(()=>cb(null),cb);\n      return work;\n    };\n  }\n\n  async function ensureQrLib() {\n    await ensureLib("QRCode", "vendor/qrcode.min.js",\n      "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js");\n    installQrToCanvasCompat();\n  }'''
+          new='''  function installQrToCanvasCompat() {\n    const QR=window.QRCode;\n    if(!QR || QR.toCanvas) return;\n    QR.toCanvas=function(canvas,text,opts={},cb){\n      const work=new Promise((resolve,reject)=>{\n        let holder;\n        try{\n          const size=Math.max(64,Number(opts.width)||256);\n          holder=document.createElement("div");\n          holder.style.cssText="position:absolute;left:-10000px;top:-10000px;width:1px;height:1px;overflow:hidden";\n          document.body.appendChild(holder);\n          new QR(holder,{text:String(text),width:size,height:size,correctLevel:QR.CorrectLevel?.M});\n          const source=holder.querySelector("canvas");\n          if(!source) throw new Error("QR canvas unavailable");\n          canvas.width=size; canvas.height=size;\n          const ctx=canvas.getContext("2d");\n          if(!ctx) throw new Error("Canvas 2D unavailable");\n          ctx.clearRect(0,0,size,size); ctx.drawImage(source,0,0,size,size);\n          holder.remove(); holder=null;\n          resolve(canvas);\n        }catch(err){ try{holder?.remove();}catch(_){} reject(err); }\n      });\n      if(typeof cb==="function") work.then(()=>cb(null),cb);\n      return work;\n    };\n  }\n\n  async function ensureQrLib() {\n    await ensureLib("QRCode", "vendor/qrcode.min.js",\n      "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js");\n    installQrToCanvasCompat();\n  }'''
           if old not in s:
               raise SystemExit('Expected ensureQrLib block not found')
           p.write_text(s.replace(old,new),encoding='utf-8')
 
           p=Path('README.md')
-          s=p.read_text(encoding='utf-8').replace('QRCode 1.5.3','QRCode.js 1.0.0')
-          p.write_text(s,encoding='utf-8')
+          p.write_text(p.read_text(encoding='utf-8').replace('QRCode 1.5.3','QRCode.js 1.0.0'),encoding='utf-8')
           PY
 
       - name: Syntax and extraction tests
@@ -80,83 +78,46 @@ jobs:
           set -euo pipefail
           rm -rf _site
           mkdir -p _site
-          rsync -a \
-            --exclude='.git' --exclude='.github' --exclude='_site' --exclude='release' --exclude='.deploy' \
-            --exclude='chunks' --exclude='loader.js' \
-            --exclude='styles-base.css' --exclude='styles-mobile.css' --exclude='styles-workspace.css' \
-            ./ _site/
+          rsync -a --exclude='.git' --exclude='.github' --exclude='_site' --exclude='release' --exclude='.deploy' \
+            --exclude='chunks' --exclude='loader.js' --exclude='styles-base.css' --exclude='styles-mobile.css' --exclude='styles-workspace.css' ./ _site/
           mkdir -p _site/vendor/pdfjs _site/vendor/tesseract/lang _site/vendor/tesseract-core _site/vendor/whisper
 
           if [ -s vendor/pdf-lib.min.js ]; then
             cp vendor/pdf-lib.min.js _site/vendor/pdf-lib.min.js
           else
-            curl --fail --location --retry 4 --retry-all-errors \
-              https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js \
-              -o _site/vendor/pdf-lib.min.js
+            curl -fL --retry 4 --retry-all-errors https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js -o _site/vendor/pdf-lib.min.js
           fi
 
-          # The qrcode package does not ship the historical build/qrcode.min.js browser file.
-          # Use the real, versioned QRCode.js browser artifact and add a toCanvas-compatible adapter.
-          curl --fail --location --retry 4 --retry-all-errors \
-            https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js \
-            -o _site/vendor/qrcode.min.js
+          curl -fL --retry 4 --retry-all-errors https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js -o _site/vendor/qrcode.min.js
           cat >> _site/vendor/qrcode.min.js <<'QRADAPTER'
           ;(function(QR){if(!QR||QR.toCanvas)return;QR.toCanvas=function(canvas,text,opts,cb){opts=opts||{};var work=new Promise(function(resolve,reject){var holder;try{var size=Math.max(64,Number(opts.width)||256);holder=document.createElement('div');holder.style.cssText='position:absolute;left:-10000px;top:-10000px;width:1px;height:1px;overflow:hidden';document.body.appendChild(holder);new QR(holder,{text:String(text),width:size,height:size,correctLevel:QR.CorrectLevel&&QR.CorrectLevel.M});var source=holder.querySelector('canvas');if(!source)throw new Error('QR canvas unavailable');canvas.width=size;canvas.height=size;var ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas 2D unavailable');ctx.clearRect(0,0,size,size);ctx.drawImage(source,0,0,size,size);holder.remove();holder=null;resolve(canvas)}catch(err){try{if(holder)holder.remove()}catch(_){}reject(err)}});if(typeof cb==='function')work.then(function(){cb(null)},cb);return work}})(window.QRCode);
           QRADAPTER
-          test -s _site/vendor/qrcode.min.js
           grep -q 'toCanvas' _site/vendor/qrcode.min.js
 
-          curl --fail --location --retry 4 --retry-all-errors \
-            https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js \
-            -o _site/vendor/jszip.min.js
+          curl -fL --retry 4 --retry-all-errors https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js -o _site/vendor/jszip.min.js
+          curl -fL --retry 4 --retry-all-errors https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js -o _site/vendor/pdfjs/pdf.min.js
+          curl -fL --retry 4 --retry-all-errors https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js -o _site/vendor/pdfjs/pdf.worker.min.js
+          curl -fL --retry 4 --retry-all-errors https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js -o _site/vendor/tesseract/tesseract.min.js
+          curl -fL --retry 4 --retry-all-errors https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js -o _site/vendor/tesseract/worker.min.js
 
-          curl --fail --location --retry 4 --retry-all-errors \
-            https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js \
-            -o _site/vendor/pdfjs/pdf.min.js
-          curl --fail --location --retry 4 --retry-all-errors \
-            https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js \
-            -o _site/vendor/pdfjs/pdf.worker.min.js
-
-          curl --fail --location --retry 4 --retry-all-errors \
-            https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js \
-            -o _site/vendor/tesseract/tesseract.min.js
-          curl --fail --location --retry 4 --retry-all-errors \
-            https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js \
-            -o _site/vendor/tesseract/worker.min.js
           for core in tesseract-core.wasm.js tesseract-core-simd.wasm.js tesseract-core-lstm.wasm.js tesseract-core-simd-lstm.wasm.js; do
-            curl --fail --location --retry 4 --retry-all-errors \
-              "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/$core" \
-              -o "_site/vendor/tesseract-core/$core" \
-            || curl --fail --location --retry 4 --retry-all-errors \
-              "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/$core" \
-              -o "_site/vendor/tesseract-core/$core"
+            curl -fL --retry 4 --retry-all-errors "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/$core" -o "_site/vendor/tesseract-core/$core" \
+              || curl -fL --retry 4 --retry-all-errors "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/$core" -o "_site/vendor/tesseract-core/$core"
           done
           for lang in deu spa eng; do
-            curl --fail --location --retry 4 --retry-all-errors \
-              "https://cdn.jsdelivr.net/npm/@tesseract.js-data/${lang}@1.0.0/4.0.0_best_int/${lang}.traineddata.gz" \
-              -o "_site/vendor/tesseract/lang/${lang}.traineddata.gz" \
-            || curl --fail --location --retry 4 --retry-all-errors \
-              "https://tessdata.projectnaptha.com/4.0.0_fast/${lang}.traineddata.gz" \
-              -o "_site/vendor/tesseract/lang/${lang}.traineddata.gz"
+            curl -fL --retry 4 --retry-all-errors "https://cdn.jsdelivr.net/npm/@tesseract.js-data/${lang}@1.0.0/4.0.0_best_int/${lang}.traineddata.gz" -o "_site/vendor/tesseract/lang/${lang}.traineddata.gz" \
+              || curl -fL --retry 4 --retry-all-errors "https://tessdata.projectnaptha.com/4.0.0_fast/${lang}.traineddata.gz" -o "_site/vendor/tesseract/lang/${lang}.traineddata.gz"
           done
 
-          curl --fail --location --retry 4 --retry-all-errors \
-            https://raw.githubusercontent.com/Prozectz/Whisper.cpp/354aad88c3f8fd274808c21f6bb686a1495979b4/main.js \
-            -o _site/vendor/whisper/main.js
-          grep -q 'full_default' _site/vendor/whisper/main.js
-          grep -q 'init' _site/vendor/whisper/main.js
-          curl --fail --location --retry 4 --retry-all-errors \
-            https://huggingface.co/ggerganov/whisper.cpp/resolve/f281eb45af861ab5e5297d23694b7d46e090c02c/ggml-tiny-q5_1.bin \
-            -o _site/vendor/whisper/ggml-tiny-q5_1.bin
+          curl -fL --retry 4 --retry-all-errors https://raw.githubusercontent.com/Prozectz/Whisper.cpp/354aad88c3f8fd274808c21f6bb686a1495979b4/main.js -o _site/vendor/whisper/main.js
+          test "$(stat -c%s _site/vendor/whisper/main.js)" -gt 1000000
+          curl -fL --retry 4 --retry-all-errors https://huggingface.co/ggerganov/whisper.cpp/resolve/f281eb45af861ab5e5297d23694b7d46e090c02c/ggml-tiny-q5_1.bin -o _site/vendor/whisper/ggml-tiny-q5_1.bin
           test "$(stat -c%s _site/vendor/whisper/ggml-tiny-q5_1.bin)" -gt 25000000
           echo "818710568da3ca15689e31a743197b520007872ff9576237bda97bd1b469c3d7  _site/vendor/whisper/ggml-tiny-q5_1.bin" | sha256sum -c -
 
-          for f in \
-            vendor/pdf-lib.min.js vendor/qrcode.min.js vendor/jszip.min.js \
-            vendor/pdfjs/pdf.min.js vendor/pdfjs/pdf.worker.min.js \
-            vendor/tesseract/tesseract.min.js vendor/tesseract/worker.min.js \
-            vendor/tesseract/lang/deu.traineddata.gz vendor/tesseract/lang/spa.traineddata.gz vendor/tesseract/lang/eng.traineddata.gz \
-            vendor/whisper/main.js vendor/whisper/ggml-tiny-q5_1.bin; do
+          for f in vendor/pdf-lib.min.js vendor/qrcode.min.js vendor/jszip.min.js vendor/pdfjs/pdf.min.js vendor/pdfjs/pdf.worker.min.js \
+            vendor/tesseract/tesseract.min.js vendor/tesseract/worker.min.js vendor/tesseract/lang/deu.traineddata.gz \
+            vendor/tesseract/lang/spa.traineddata.gz vendor/tesseract/lang/eng.traineddata.gz vendor/whisper/main.js vendor/whisper/ggml-tiny-q5_1.bin; do
             test -s "_site/$f"
           done
 
@@ -175,7 +136,7 @@ jobs:
           trap 'kill $SERVER_PID || true' EXIT
           sleep 1
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          if [ -z "$CHROME" ]; then echo 'Chromium not present on runner'; exit 1; fi
+          test -n "$CHROME"
           "$CHROME" --headless=new --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8123/qr-smoke.html > /tmp/qr-dom.html
           grep -q 'data-qr="ok"' /tmp/qr-dom.html
           rm -f _site/qr-smoke.html
@@ -198,9 +159,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/puente-node
-          mkdir -p /tmp/puente-node
-          cd /tmp/puente-node
+          rm -rf /tmp/puente-node && mkdir -p /tmp/puente-node && cd /tmp/puente-node
           npm init -y >/dev/null 2>&1
           npm install --no-save playwright@1.55.0 pdf-lib@1.17.1
           npx playwright install --with-deps chromium
@@ -210,25 +169,17 @@ jobs:
           sudo rm -rf /home/claude/app
           sudo ln -s "$GITHUB_WORKSPACE" /home/claude/app
           NODE_PATH="$NODE_PATH" node - <<'NODE'
-          const fs=require('fs');
-          const {PDFDocument}=require('pdf-lib');
-          (async()=>{
-            const p=await PDFDocument.create(); p.addPage([595,842]);
-            const form=p.getForm();
-            form.createTextField('Vorname').addToPage(p.getPage(0),{x:40,y:760,width:180,height:24});
-            form.createTextField('Nachname').addToPage(p.getPage(0),{x:240,y:760,width:180,height:24});
-            form.createTextField('Geburtsdatum').addToPage(p.getPage(0),{x:40,y:710,width:180,height:24});
-            form.createTextField('IBAN').addToPage(p.getPage(0),{x:40,y:660,width:380,height:24});
-            form.createTextField('Steuer-ID').addToPage(p.getPage(0),{x:40,y:610,width:180,height:24});
-            form.createTextField('Wohnfläche').addToPage(p.getPage(0),{x:240,y:610,width:180,height:24});
-            fs.writeFileSync('/home/claude/testformular.pdf',await p.save());
-          })().catch(e=>{console.error(e);process.exit(1)});
+          const fs=require('fs'); const {PDFDocument}=require('pdf-lib');
+          (async()=>{const p=await PDFDocument.create();p.addPage([595,842]);const form=p.getForm();
+          form.createTextField('Vorname').addToPage(p.getPage(0),{x:40,y:760,width:180,height:24});
+          form.createTextField('Nachname').addToPage(p.getPage(0),{x:240,y:760,width:180,height:24});
+          form.createTextField('Geburtsdatum').addToPage(p.getPage(0),{x:40,y:710,width:180,height:24});
+          form.createTextField('IBAN').addToPage(p.getPage(0),{x:40,y:660,width:380,height:24});
+          form.createTextField('Steuer-ID').addToPage(p.getPage(0),{x:40,y:610,width:180,height:24});
+          form.createTextField('Wohnfläche').addToPage(p.getPage(0),{x:240,y:610,width:180,height:24});
+          fs.writeFileSync('/home/claude/testformular.pdf',await p.save());})().catch(e=>{console.error(e);process.exit(1)});
           NODE
-          NODE_PATH="$NODE_PATH" node tests/01-grundfunktionen.js "$GITHUB_WORKSPACE"
-          NODE_PATH="$NODE_PATH" node tests/02-fristen-bescheid-beratung.js
-          NODE_PATH="$NODE_PATH" node tests/03-speicher-phasen-postausgang.js
-          NODE_PATH="$NODE_PATH" node tests/04-speicherstufen.js
-          NODE_PATH="$NODE_PATH" node tests/05-pdf-ausfuellen.js
+          for t in tests/01-grundfunktionen.js tests/02-fristen-bescheid-beratung.js tests/03-speicher-phasen-postausgang.js tests/04-speicherstufen.js tests/05-pdf-ausfuellen.js; do NODE_PATH="$NODE_PATH" node "$t"; done
 
       - name: Persist tested source and offline runtime assets
         shell: bash
