@@ -1,0 +1,95 @@
+
+const APP_DATA = {
+  meta:{updated:"2026-09-03",version:"0.4.1"},
+  ui:{
+    es:{
+      navHome:"Inicio",navAssistant:"Asistente",navCase:"Caso",navDocs:"Documentos",navLost:"Perdidos",navProgress:"Progreso",
+      heroTitle:"Menos barreras. Más claridad.",
+      heroText:"Guía bilingüe para preparar trámites en Alemania, saber qué falta y encontrar la forma más sencilla de conseguir cada dato.",
+      choose:"¿Qué quieres preparar?",chooseText:"Este prototipo empieza con dos solicitudes frecuentes y un modo de emergencia documental.",
+      lostTitle:"He perdido documentos",lostSub:"reconstruye los datos paso a paso",
+      docsTitle:"¿Dónde encuentro esta información?",docsSub:"Busca un documento o dato y abre rutas ordenadas por dificultad.",
+      important:"Importante",evidenceLate:"Para Grundsicherungsgeld puedes presentar la solicitud aunque todavía falten justificantes; entrégalos lo antes posible. No entregues originales al Jobcenter.",
+      privacyShort:"Sin cuenta, sin nube y sin analítica. El progreso se guarda solo en este dispositivo.",
+      statusHave:"Lo tengo",statusUnsure:"No sé",statusMissing:"Me falta",how:"Cómo conseguirlo",required:"Necesario",conditional:"Según el caso",
+      progress:"Progreso",ready:"marcado como disponible",print:"Imprimir / PDF",sources:"Fuentes oficiales",reset:"Borrar progreso",
+      searchPlaceholder:"Buscar: Steuer-ID, alquiler, seguro…",noResults:"No se encontraron resultados.",copyRequest:"Copiar solicitud",copied:"Texto copiado",
+      lostIntro:"Si se perdió todo (por ejemplo por incendio), no intentes resolverlo todo a la vez. Empieza por la identidad y reconstruye después los registros administrativos.",
+      currentStatus:"Estado de este caso",noCase:"Todavía no has marcado documentos.",
+      privacyTitle:"Privacidad de este prototipo",privacyBody:"La aplicación no pide números de documento, cuentas bancarias ni fotos. Solo guarda localmente si un documento está disponible, dudoso o falta. No se envían datos a ningún servidor.",
+      resetConfirm:"¿Borrar todo el progreso guardado en este dispositivo?",legalNote:"Guía práctica, no asesoramiento jurídico. La autoridad competente puede pedir documentos adicionales según el caso y el municipio.",
+      berlinNote:"La lista de Wohngeld usa como referencia una lista oficial de Berlin para Mietzuschuss. En otros municipios pueden variar detalles y formularios; comprueba siempre la Wohngeldbehörde local.",
+      openOfficial:"Abrir fuente oficial"
+    },
+    de:{
+      navHome:"Start",navAssistant:"Assistent",navCase:"Fall",navDocs:"Dokumente",navLost:"Verlust",navProgress:"Fortschritt",
+      heroTitle:"Weniger Hürden. Mehr Klarheit.",
+      heroText:"Zweisprachiger Navigator, um Behördenanträge vorzubereiten, fehlende Angaben zu erkennen und den einfachsten Beschaffungsweg zu finden.",
+      choose:"Was soll vorbereitet werden?",chooseText:"Dieser Prototyp startet mit zwei häufigen Anträgen und einem Dokumentverlust-Modus.",
+      lostTitle:"Dokumente verloren",lostSub:"Angaben Schritt für Schritt rekonstruieren",
+      docsTitle:"Wo finde ich diese Information?",docsSub:"Dokument oder Angabe suchen und nach Aufwand sortierte Wege öffnen.",
+      important:"Wichtig",evidenceLate:"Grundsicherungsgeld kann beantragt werden, auch wenn Nachweise noch fehlen; diese sollten schnellstmöglich nachgereicht werden. Beim Jobcenter keine Originale einreichen.",
+      privacyShort:"Kein Konto, keine Cloud, keine Analyse. Fortschritt bleibt nur auf diesem Gerät.",
+      statusHave:"Vorhanden",statusUnsure:"Unsicher",statusMissing:"Fehlt",how:"Beschaffungswege",required:"Erforderlich",conditional:"Je nach Fall",
+      progress:"Fortschritt",ready:"als vorhanden markiert",print:"Drucken / PDF",sources:"Offizielle Quellen",reset:"Fortschritt löschen",
+      searchPlaceholder:"Suchen: Steuer-ID, Miete, Krankenkasse…",noResults:"Keine Ergebnisse gefunden.",copyRequest:"Anfrage kopieren",copied:"Text kopiert",
+      lostIntro:"Wenn alles verloren ging (z. B. durch Brand), nicht alles gleichzeitig lösen. Zuerst Identität sichern, dann Verwaltungsdaten systematisch rekonstruieren.",
+      currentStatus:"Stand dieses Falls",noCase:"Noch keine Dokumente markiert.",
+      privacyTitle:"Datenschutz dieses Prototyps",privacyBody:"Die App fragt keine Ausweisnummern, Kontodaten oder Fotos ab. Gespeichert wird nur lokal, ob ein Dokument vorhanden, unklar oder fehlend ist. Es werden keine Daten an einen Server gesendet.",
+      resetConfirm:"Gesamten gespeicherten Fortschritt auf diesem Gerät löschen?",legalNote:"Praktische Orientierung, keine Rechtsberatung. Die zuständige Behörde kann je nach Einzelfall und Kommune weitere Nachweise verlangen.",
+      berlinNote:"Für Wohngeld orientiert sich die Kernliste an einer offiziellen Berliner Mietzuschuss-Liste. In anderen Kommunen können Details und Formulare abweichen; immer die örtliche Wohngeldbehörde prüfen.",
+      openOfficial:"Offizielle Quelle öffnen"
+    }
+  },
+
+  services:{
+    grundsicherung:{
+      icon:"🧾",
+      title:{es:"Grundsicherungsgeld",de:"Grundsicherungsgeld"},
+      subtitle:{es:"antes Bürgergeld / Hartz IV · Jobcenter",de:"vormals Bürgergeld / Hartz IV · Jobcenter"},
+      note:{es:"La lista exacta depende de la situación personal. El Jobcenter exige justificar los datos; los justificantes que faltan pueden entregarse después.",de:"Die genaue Liste hängt von der persönlichen Situation ab. Angaben müssen belegt werden; fehlende Nachweise können nachgereicht werden."},
+      requirements:[
+        ["id_document","required"],["registration","conditional"],["residence_right","conditional"],
+        ["tax_id","conditional"],["social_insurance","conditional"],["health_insurance","required"],
+        ["iban","required"],["bank_statements","required"],["income_proof","required"],["assets","required"],
+        ["rental_contract","conditional"],["heating_costs","conditional"],["previous_benefits","conditional"],["employment_end","conditional"]
+      ]
+    },
+    wohngeld:{
+      icon:"🏠",
+      title:{es:"Wohngeld",de:"Wohngeld"},
+      subtitle:{es:"Mietzuschuss para inquilinos",de:"Mietzuschuss für Mieter"},
+      note:{es:"Los formularios y algunos justificantes dependen del municipio. Esta lista cubre documentos básicos habituales para un Mietzuschuss.",de:"Formulare und einzelne Nachweise unterscheiden sich kommunal. Diese Liste deckt typische Kernunterlagen für den Mietzuschuss ab."},
+      requirements:[
+        ["household_ids","required"],["residence_right","conditional"],["rental_contract","required"],
+        ["rent_payments","required"],["income_all_household","required"],["transfer_benefits","conditional"],["special_deductions","conditional"]
+      ]
+    }
+  },
+
+  documents:{
+    id_document:{
+      icon:"🪪",title:{es:"Documento de identidad",de:"Ausweisdokument"},
+      desc:{es:"DNI/pasaporte válido; para documentos alemanes, Personalausweis o Reisepass.",de:"Gültiger Ausweis/Pass; bei deutschen Dokumenten Personalausweis oder Reisepass."},
+      recovery:[
+        {level:1,es:"Busca fotos o escaneos antiguos en el móvil, correo electrónico o carpeta de documentos. Sirven para reconstruir datos, aunque no sustituyen siempre el original.",de:"Alte Fotos/Scans auf Handy, E-Mail oder Dokumentenordner prüfen. Sie helfen bei der Rekonstruktion, ersetzen aber nicht immer das Original."},
+        {level:2,es:"Si el documento es español u otro documento extranjero: contacta con el consulado/embajada correspondiente para saber el procedimiento de sustitución.",de:"Bei spanischem oder anderem ausländischem Ausweis: zuständiges Konsulat/Botschaft nach dem Ersatzverfahren fragen."},
+        {level:3,es:"Si es un documento alemán: solicita uno nuevo en la autoridad de pasaportes/documentos de identidad de tu municipio.",de:"Bei deutschem Ausweisdokument: neues Dokument bei der Pass-/Personalausweisbehörde der Kommune beantragen."},
+        {level:4,es:"Si no puedes acreditar tu identidad de ninguna forma, pide apoyo al consulado o a una Beratungsstelle antes de seguir con trámites complejos.",de:"Wenn die Identität gar nicht nachweisbar ist, vor komplexen Anträgen Unterstützung beim Konsulat oder einer Beratungsstelle holen."}
+      ]
+    },
+    registration:{
+      icon:"📍",title:{es:"Meldebescheinigung / domicilio registrado",de:"Meldebescheinigung / Meldedaten"},
+      desc:{es:"Prueba de domicilio; según la versión puede incluir entrada, estado civil y domicilios anteriores.",de:"Nachweis der Meldedaten; je nach Ausführung auch Einzugsdatum, Familienstand oder frühere Anschriften."},
+      recovery:[
+        {level:1,es:"Comprueba si ya tienes una Meldebescheinigung en PDF, correo electrónico o carpeta de trámites.",de:"Prüfen, ob eine Meldebescheinigung bereits als PDF, E-Mail-Anhang oder Papier vorhanden ist."},
+        {level:2,es:"Pregunta a tu Bürgeramt/Meldebehörde local. En muchas ciudades se puede solicitar de nuevo.",de:"Bei Bürgeramt/Meldebehörde nachfragen. In vielen Städten kann sie erneut beantragt werden."},
+        {level:3,es:"Ejemplo Berlin: puede solicitarse online o en el Bürgeramt; pueden incluirse datos adicionales.",de:"Beispiel Berlin: online oder beim Bürgeramt beantragen; zusätzliche Meldedaten können aufgenommen werden.",url:"https://service.berlin.de/dienstleistung/120702/"}
+      ]
+    },
+    residence_right:{
+      icon:"🌍",title:{es:"Derecho de residencia",de:"Aufenthaltsrecht"},
+      desc:{es:"Para ciudadanos de la UE suele bastar el documento de identidad; para terceros países puede ser necesario un Aufenthaltstitel.",de:"Bei EU-Staatsangehörigen genügt häufig das Ausweisdokument; bei Drittstaaten kann ein Aufenthaltstitel erforderlich sein."},
+      recovery:[
+        {level:1,es:"Comprueba nacionalidad y documento de identidad. No confundas idioma español con ciudadanía española/UE.",de:"Staatsangehörigkeit und Ausweisdokument prüfen. Spanische Sprache bedeutet nicht automatisch spanische/EU-Staatsangehörigkeit."},
+        {level:2,
