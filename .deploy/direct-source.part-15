@@ -1,0 +1,262 @@
+"Bitte jede Zuordnung prüfen. Die automatische Zuordnung stützt sich auf die internen PDF-Feldnamen und kann danebenliegen.")}</div>
+        <div class="map-list">
+          ${usable.map(f => {
+            const n = f.getName();
+            return `<div class="map-row">
+              <div class="map-field" title="${esc(n)}">${esc(n)}</div>
+              <select class="map-select" data-pdf-field="${esc(n)}">
+                <option value="">— ${L("no rellenar", "nicht ausfüllen")} —</option>
+                ${candidates.map(c => `<option value="${esc(c.key)}" ${pdfState.mapping[n] === c.key ? "selected" : ""}>${esc(c.label)} → ${esc(String(c.value).slice(0, 30))}</option>`).join("")}
+              </select>
+            </div>`;
+          }).join("")}
+        </div>
+        <div class="toolbar">
+          <button type="button" class="primary-btn" id="pdfFill">🖊️ ${L("Rellenar y descargar", "Ausfüllen und herunterladen")}</button>
+          <button type="button" class="secondary-btn" id="pdfAppendix">📄 ${L("Añadir además hoja de apoyo", "Zusätzlich Ausfüllhilfe anhängen")}</button>
+        </div>
+        <label class="checkline"><input type="checkbox" id="pdfFlatten"> ${L("Bloquear campos tras rellenar (ya no editables)", "Felder nach dem Ausfüllen sperren (nicht mehr änderbar)")}</label>`;
+
+      $$("[data-pdf-field]").forEach(sel => sel.addEventListener("change", () => {
+        pdfState.mapping[sel.dataset.pdfField] = sel.value;
+      }));
+      $("#pdfFill").addEventListener("click", fillPdfForm);
+      $("#pdfAppendix").addEventListener("click", buildAppendixPdf);
+    } catch (err) {
+      area.innerHTML = `<div class="notice danger">${L("No se pudo abrir el PDF: ", "PDF konnte nicht geöffnet werden: ")}${esc(err?.message || String(err))}</div>`;
+    }
+  }
+
+  function fieldKind(f) {
+    if (typeof f.check === "function" && typeof f.uncheck === "function") return "checkbox";
+    if (typeof f.select === "function" && typeof f.getOptions === "function") return "choice";
+    if (typeof f.setText === "function") return "text";
+    return "other";
+  }
+
+  async function fillPdfForm() {
+    try {
+      const values = Object.fromEntries(preparedValues().map(v => [v.key, v.value]));
+      const form = pdfState.doc.getForm();
+      let filled = 0;
+      for (const [fieldName, valueKey] of Object.entries(pdfState.mapping)) {
+        if (!valueKey || !(valueKey in values)) continue;
+        const text = sanitizePdfText(values[valueKey]);
+        try {
+          const f = form.getField(fieldName);
+          const kind = fieldKind(f);
+          if (kind === "text") { f.setText(text); filled++; }
+          else if (kind === "choice") {
+            const hit = (f.getOptions() || []).find(o => norm(o) === norm(text));
+            if (hit) { f.select(hit); filled++; }
+          } else if (kind === "checkbox") {
+            const yes = /^(ja|si|sí|yes|x|1|true)$/i.test(text.trim());
+            if (yes) { f.check(); filled++; }
+          }
+        } catch (_) { /* einzelnes Feld überspringen */ }
+      }
+      try { form.updateFieldAppearances(); } catch (_) {}
+      if ($("#pdfFlatten")?.checked) { try { form.flatten(); } catch (_) {} }
+      const out = await pdfState.doc.save();
+      download(pdfState.name.replace(/\.pdf$/i, "") + "_Puente.pdf", new Blob([out], { type: "application/pdf" }));
+      ctx.toast(L(`${filled} campos rellenados.`, `${filled} Felder ausgefüllt.`));
+      // Nach dem Speichern neu laden, damit ein zweiter Durchgang sauber startet.
+      pdfState.doc = await PDFLib.PDFDocument.load(pdfState.bytes, { ignoreEncryption: true });
+    } catch (err) {
+      ctx.toast(L("No se pudo rellenar: ", "Ausfüllen fehlgeschlagen: ") + (err?.message || err));
+    }
+  }
+
+  async function buildAppendixPdf() {
+    try {
+      await ensurePdfLib();
+      const src = pdfState.bytes
+        ? await PDFLib.PDFDocument.load(pdfState.bytes, { ignoreEncryption: true })
+        : await PDFLib.PDFDocument.create();
+      const font = await src.embedFont(PDFLib.StandardFonts.Helvetica);
+      const bold = await src.embedFont(PDFLib.StandardFonts.HelveticaBold);
+      const rows = preparedValues();
+      const perPage = 34;
+      const pages = Math.max(1, Math.ceil(rows.length / perPage));
+      for (let p = 0; p < pages; p++) {
+        const page = src.addPage([595, 842]); // A4
+        let y = 790;
+        page.drawText(sanitizePdfText(L("Puente - Hoja de apoyo", "Puente - Ausfüllhilfe")), { x: 45, y, size: 16, font: bold });
+        y -= 18;
+        page.drawText(sanitizePdfText(L(`Generado el ${fmtDate(today())} - documento de trabajo, no es el formulario oficial`,
+          `Erstellt am ${fmtDate(today())} - Arbeitsunterlage, nicht das amtliche Formular`)), { x: 45, y, size: 8, font });
+        y -= 22;
+        for (const r of rows.slice(p * perPage, (p + 1) * perPage)) {
+          page.drawText(sanitizePdfText(r.label).slice(0, 62), { x: 45, y, size: 9, font: bold });
+          y -= 12;
+          page.drawText(sanitizePdfText(r.value).slice(0, 80), { x: 55, y, size: 10, font });
+          y -= 10;
+          page.drawLine({ start: { x: 45, y: y + 2 }, end: { x: 550, y: y + 2 }, thickness: 0.4, opacity: 0.25 });
+          y -= 8;
+        }
+      }
+      const out = await src.save();
+      download((pdfState.name || "Puente").replace(/\.pdf$/i, "") + "_Ausfuellhilfe.pdf", new Blob([out], { type: "application/pdf" }));
+      ctx.toast(L("Hoja de apoyo creada.", "Ausfüllhilfe erstellt."));
+    } catch (err) {
+      ctx.toast(L("No se pudo crear: ", "Erstellen fehlgeschlagen: ") + (err?.message || err));
+    }
+  }
+
+  /* ========================================================================
+     Postausgangsbuch
+     Die Beweislast für den rechtzeitigen Zugang liegt bei der antragstellenden
+     Person. Genau daran scheitern Verfahren, nicht am Inhalt des Antrags.
+     ======================================================================== */
+
+  const SEND_WAYS = [
+    { id: "counter", icon: "🏢", title: { es: "En persona con sello", de: "Persönlich mit Eingangsstempel" },
+      hint: { es: "La forma más segura: pide sello en tu copia.", de: "Der sicherste Weg: Kopie abstempeln lassen." }, quality: "best" },
+    { id: "registered", icon: "📮", title: { es: "Correo certificado", de: "Einschreiben" },
+      hint: { es: "Guarda el resguardo con el número de envío.", de: "Einlieferungsbeleg mit Sendungsnummer aufbewahren." }, quality: "best" },
+    { id: "mailbox", icon: "📬", title: { es: "Buzón de la oficina", de: "Hausbriefkasten der Behörde" },
+      hint: { es: "Si es posible, con testigo y foto con fecha.", de: "Wenn möglich mit Zeugin oder Zeuge und Foto mit Datum." }, quality: "ok" },
+    { id: "portal", icon: "💻", title: { es: "Portal en línea", de: "Online-Portal" },
+      hint: { es: "Guarda la confirmación de envío como PDF.", de: "Sendebestätigung als PDF sichern." }, quality: "ok" },
+    { id: "post", icon: "✉️", title: { es: "Correo ordinario", de: "Einfacher Brief" },
+      hint: { es: "Sin prueba de entrega. Evítalo si corre un plazo.", de: "Ohne Zugangsnachweis. Bei laufender Frist besser vermeiden." }, quality: "weak" },
+    { id: "email", icon: "📧", title: { es: "Correo electrónico", de: "E-Mail" },
+      hint: { es: "No siempre se acepta. Pide confirmación de recepción.", de: "Wird nicht überall akzeptiert. Eingangsbestätigung erbitten." }, quality: "weak" }
+  ];
+  const wayById = id => SEND_WAYS.find(w => w.id === id) || SEND_WAYS[0];
+
+  function addOutbox(entry) {
+    const o = {
+      id: `p${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      what: entry.what || "", to: entry.to || "", way: entry.way || "counter",
+      date: entry.date || toISO(today()), tracking: entry.tracking || "",
+      ref: entry.ref || "", note: entry.note || "",
+      confirmed: false, createdAt: new Date().toISOString()
+    };
+    outbox.push(o); saveOutbox(); return o;
+  }
+
+  function outboxCard(o) {
+    const w = wayById(o.way);
+    return `<article class="outbox-item ${w.quality}">
+      <div class="deadline-head">
+        <div class="deadline-icon">${w.icon}</div>
+        <div class="deadline-main">
+          <h3>${esc(o.what || L("Envío", "Sendung"))}</h3>
+          <div class="deadline-date"><strong>${esc(fmtDate(fromISO(o.date)))}</strong> · ${esc(tx(w.title))}</div>
+          ${o.to ? `<div class="small">${L("A", "An")}: ${esc(o.to)}</div>` : ""}
+          ${o.ref ? `<div class="small">${L("Expediente", "Aktenzeichen")}: ${esc(o.ref)}</div>` : ""}
+          ${o.tracking ? `<div class="small">${L("Nº de envío", "Sendungsnummer")}: ${esc(o.tracking)}</div>` : ""}
+          <div class="small">${o.confirmed
+            ? `<span class="badge ok">${L("recepción confirmada", "Eingang bestätigt")}</span>`
+            : `<span class="badge warn">${L("sin confirmación", "ohne Bestätigung")}</span>`}</div>
+        </div>
+      </div>
+      <div class="deadline-actions">
+        <button type="button" class="mini-btn" data-outbox-confirm="${o.id}">${o.confirmed ? L("↺ Marcar sin confirmar", "↺ Als offen markieren") : L("✓ Recepción confirmada", "✓ Eingang bestätigt")}</button>
+        <button type="button" class="mini-btn danger" data-outbox-del="${o.id}">✕ ${L("Quitar", "Entfernen")}</button>
+      </div>
+    </article>`;
+  }
+
+  function outboxView() {
+    const list = [...outbox].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    const weak = list.filter(o => wayById(o.way).quality === "weak" && !o.confirmed).length;
+    return `
+      <div class="service-head">
+        <div class="big-icon">📮</div>
+        <div>
+          <h1>${L("Libro de envíos", "Postausgangsbuch")}</h1>
+          <p>${L("Quien afirma haber entregado algo a tiempo tiene que poder demostrarlo. Aquí se anota qué salió, cuándo y por qué vía.",
+                 "Wer behauptet, etwas fristgerecht abgegeben zu haben, muss das belegen können. Hier wird festgehalten, was wann und auf welchem Weg herausging.")}</p>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button type="button" class="primary-btn" id="addOutboxBtn">➕ ${L("Anotar envío", "Sendung eintragen")}</button>
+      </div>
+
+      ${weak ? `<div class="notice warning">${L(
+        `${weak} envío(s) por una vía sin prueba de entrega y sin confirmación. Si corre un plazo, conviene reclamar la confirmación por escrito.`,
+        `${weak} Sendung(en) auf einem Weg ohne Zugangsnachweis und ohne Bestätigung. Bei laufender Frist sollte die Bestätigung schriftlich angefordert werden.`)}</div>` : ""}
+
+      ${list.length ? `<div class="deadline-list">${list.map(outboxCard).join("")}</div>`
+        : `<div class="empty"><div class="empty-illustration">📮</div>
+             ${L("Aún no hay envíos anotados.", "Noch keine Sendungen eingetragen.")}</div>`}
+
+      <div class="section-title"><div><h2>${L("Qué vía deja prueba", "Welcher Weg beweiskräftig ist")}</h2></div></div>
+      <div class="deadline-list">
+        ${SEND_WAYS.map(w => `<article class="req"><div class="req-top">
+          <div class="req-icon">${w.icon}</div>
+          <div class="req-main"><h3>${esc(tx(w.title))}</h3><p>${esc(tx(w.hint))}</p>
+          <div class="meta"><span class="badge ${w.quality === "best" ? "ok" : w.quality === "weak" ? "bad" : "warn"}">${
+            w.quality === "best" ? L("con prueba", "beweiskräftig") : w.quality === "weak" ? L("sin prueba", "ohne Nachweis") : L("parcial", "eingeschränkt")}</span></div>
+          </div></div></article>`).join("")}
+      </div>
+    `;
+  }
+
+  function openOutboxModal() {
+    $("#modalTitle").textContent = L("➕ Anotar envío", "➕ Sendung eintragen");
+    $("#modalBody").innerHTML = `
+      <label class="field-label" for="obWhat">${L("¿Qué se ha entregado?", "Was wurde abgegeben?")}</label>
+      <input id="obWhat" class="full-input" placeholder="${L("p. ej. Solicitud principal con anexos", "z. B. Hauptantrag mit Anlagen")}">
+
+      <label class="field-label" for="obTo">${L("¿A qué oficina?", "An welche Stelle?")}</label>
+      <input id="obTo" class="full-input" placeholder="${L("p. ej. Jobcenter Berlin Mitte", "z. B. Jobcenter Berlin Mitte")}">
+
+      <label class="field-label" for="obWay">${L("Vía", "Weg")}</label>
+      <select id="obWay" class="full-input">
+        ${SEND_WAYS.map(w => `<option value="${w.id}">${w.icon} ${esc(tx(w.title))}</option>`).join("")}
+      </select>
+      <div class="notice" id="obHint"></div>
+
+      <label class="field-label" for="obDate">${L("Fecha", "Datum")}</label>
+      <input id="obDate" class="full-input" type="date" value="${toISO(today())}">
+
+      <label class="field-label" for="obTracking">${L("Nº de envío o referencia (opcional)", "Sendungsnummer oder Beleg (optional)")}</label>
+      <input id="obTracking" class="full-input">
+
+      <div class="toolbar"><button type="button" class="primary-btn" id="obSave">${L("Guardar", "Speichern")}</button></div>`;
+    const hint = () => { $("#obHint").textContent = tx(wayById($("#obWay").value).hint); };
+    $("#obWay").addEventListener("change", hint); hint();
+    $("#obSave").addEventListener("click", () => {
+      addOutbox({
+        what: $("#obWhat").value.trim(), to: $("#obTo").value.trim(), way: $("#obWay").value,
+        date: $("#obDate").value, tracking: $("#obTracking").value.trim()
+      });
+      $("#modal").close(); ctx.toast(L("Envío anotado.", "Sendung eingetragen."));
+      ctx.setRoute("outbox");
+    });
+    $("#modal").showModal();
+  }
+
+  /* ========================================================================
+     Beratungsstellen
+     ======================================================================== */
+
+  let adviceTopic = "alle";
+
+  function adviceView() {
+    const list = (D().advisory || []).filter(a => adviceTopic === "alle" || (a.topics || []).includes(adviceTopic));
+    return `
+      <div class="service-head">
+        <div class="big-icon">🤝</div>
+        <div>
+          <h1>${L("Dónde hay apoyo personal", "Wo es persönliche Unterstützung gibt")}</h1>
+          <p>${L("Puente prepara el expediente. Para las decisiones difíciles ayuda una persona con experiencia.",
+                 "Puente bereitet den Fall vor. Für die schwierigen Entscheidungen hilft ein Mensch mit Erfahrung.")}</p>
+        </div>
+      </div>
+
+      <div class="form-tabs" role="tablist">
+        ${(D().advisoryTopics || [])
+          .filter(t => t.id === "alle" || (D().advisory || []).some(a => (a.topics || []).includes(t.id)))
+          .map(t => `<button type="button" role="tab" aria-selected="${t.id === adviceTopic}" class="form-tab ${t.id === adviceTopic ? "active" : ""}" data-advice-topic="${t.id}">${esc(tx(t.label))}</button>`).join("")}
+      </div>
+
+      <div class="requirements">
+        ${list.length ? list.map(a => `
+          <article class="req advice-card">
+            <div class="req-top">
+              <div class="req-ic
