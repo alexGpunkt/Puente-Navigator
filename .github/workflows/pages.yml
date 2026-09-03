@@ -44,6 +44,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
+
           p=Path('tests/03-speicher-phasen-postausgang.js')
           s=p.read_text(encoding='utf-8')
           bad="rep.push('[START] '+(await page.evaluate(()=>document.querySelector('.next-step h1')?.textContent||'KEIN next-step'));"
@@ -52,6 +53,18 @@ jobs:
               s=s.replace(bad,good)
               p.write_text(s,encoding='utf-8')
               print('Repaired tests/03 START assertion')
+
+          p=Path('features.js')
+          s=p.read_text(encoding='utf-8')
+          old='''  async function ensureQrLib() {\n    await ensureLib("QRCode", "vendor/qrcode.min.js",\n      "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js");\n  }'''
+          new='''  function installQrToCanvasCompat() {\n    const QR=window.QRCode;\n    if(!QR || QR.toCanvas) return;\n    QR.toCanvas=function(canvas,text,opts={},cb){\n      const work=new Promise((resolve,reject)=>{\n        let holder;\n        try{\n          const size=Math.max(64,Number(opts.width)||256);\n          holder=document.createElement("div");\n          holder.style.cssText="position:absolute;left:-10000px;top:-10000px;width:1px;height:1px;overflow:hidden";\n          document.body.appendChild(holder);\n          new QR(holder,{text:String(text),width:size,height:size,correctLevel:QR.CorrectLevel?.M});\n          const source=holder.querySelector("canvas");\n          if(!source) throw new Error("QR canvas unavailable");\n          canvas.width=size; canvas.height=size;\n          const ctx=canvas.getContext("2d");\n          if(!ctx) throw new Error("Canvas 2D unavailable");\n          ctx.clearRect(0,0,size,size); ctx.drawImage(source,0,0,size,size);\n          holder.remove(); holder=null;\n          resolve(canvas);\n        }catch(err){\n          try{holder?.remove();}catch(_){}\n          reject(err);\n        }\n      });\n      if(typeof cb==="function") work.then(()=>cb(null),cb);\n      return work;\n    };\n  }\n\n  async function ensureQrLib() {\n    await ensureLib("QRCode", "vendor/qrcode.min.js",\n      "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js");\n    installQrToCanvasCompat();\n  }'''
+          if old not in s:
+              raise SystemExit('Expected ensureQrLib block not found')
+          p.write_text(s.replace(old,new),encoding='utf-8')
+
+          p=Path('README.md')
+          s=p.read_text(encoding='utf-8').replace('QRCode 1.5.3','QRCode.js 1.0.0')
+          p.write_text(s,encoding='utf-8')
           PY
 
       - name: Syntax and extraction tests
@@ -82,9 +95,14 @@ jobs:
               -o _site/vendor/pdf-lib.min.js
           fi
 
+          # The qrcode package does not ship the historical build/qrcode.min.js browser file.
+          # Use the real, versioned QRCode.js browser artifact and add a toCanvas-compatible adapter.
           curl --fail --location --retry 4 --retry-all-errors \
-            https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js \
+            https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js \
             -o _site/vendor/qrcode.min.js
+          cat >> _site/vendor/qrcode.min.js <<'QRADAPTER'
+          ;(function(QR){if(!QR||QR.toCanvas)return;QR.toCanvas=function(canvas,text,opts,cb){opts=opts||{};var work=new Promise(function(resolve,reject){var holder;try{var size=Math.max(64,Number(opts.width)||256);holder=document.createElement('div');holder.style.cssText='position:absolute;left:-10000px;top:-10000px;width:1px;height:1px;overflow:hidden';document.body.appendChild(holder);new QR(holder,{text:String(text),width:size,height:size,correctLevel:QR.CorrectLevel&&QR.CorrectLevel.M});var source=holder.querySelector('canvas');if(!source)throw new Error('QR canvas unavailable');canvas.width=size;canvas.height=size;var ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas 2D unavailable');ctx.clearRect(0,0,size,size);ctx.drawImage(source,0,0,size,size);holder.remove();holder=null;resolve(canvas)}catch(err){try{if(holder)holder.remove()}catch(_){}reject(err)}});if(typeof cb==='function')work.then(function(){cb(null)},cb);return work}})(window.QRCode);
+          QRADAPTER
           test -s _site/vendor/qrcode.min.js
           grep -q 'toCanvas' _site/vendor/qrcode.min.js
 
@@ -149,8 +167,7 @@ jobs:
           cat > _site/qr-smoke.html <<'HTML'
           <!doctype html><meta charset="utf-8"><body data-qr="pending"><canvas id="q"></canvas>
           <script src="vendor/qrcode.min.js"></script><script>
-          try { QRCode.toCanvas(document.getElementById('q'),'Puente QR smoke',{width:180},function(err){document.body.dataset.qr=err?'fail':'ok'}); }
-          catch(e) { document.body.dataset.qr='fail'; }
+          QRCode.toCanvas(document.getElementById('q'),'Puente QR smoke',{width:180,margin:1}).then(function(){document.body.dataset.qr='ok'}).catch(function(){document.body.dataset.qr='fail'});
           </script></body>
           HTML
           python3 -m http.server 8123 --directory _site >/tmp/puente-http.log 2>&1 &
@@ -172,6 +189,7 @@ jobs:
           grep -q 'vendor/whisper/main.js' _site/capture.js
           grep -q 'ggml-tiny-q5_1.bin' _site/capture.js
           grep -q 'vendor/qrcode.min.js' _site/features.js
+          grep -q 'qrcodejs@1.0.0' _site/features.js
           grep -q 'bank_card' _site/capture.js
           grep -q 'health_card' _site/capture.js
           grep -q 'extractSpokenFacts' _site/capture.js
