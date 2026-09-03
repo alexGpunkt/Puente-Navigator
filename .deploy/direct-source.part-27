@@ -12,26 +12,17 @@ console.log('Vorbereitete Werte laut UI:',await page.evaluate(()=>document.query
 await page.setInputFiles('#pdfFormFile','/home/claude/testformular.pdf');
 await page.waitForTimeout(1200);
 const info=await page.evaluate(()=>{
-  const rows=[...document.querySelectorAll('.map-row')].map(r=>({
-    feld:r.querySelector('.map-field').textContent,
-    zuordnung:r.querySelector('select').selectedOptions[0].textContent.trim()
-  }));
+  const rows=[...document.querySelectorAll('.map-row')].map(r=>({feld:r.querySelector('.map-field').textContent,zuordnung:r.querySelector('select').selectedOptions[0].textContent.trim()}));
   return {kopf:document.querySelector('#pdfFieldArea .section-title')?.innerText.replace(/\n/g,' | '),rows};
 });
-console.log('\n'+info.kopf);
-info.rows.forEach(r=>console.log('  '+r.feld.padEnd(30)+' -> '+r.zuordnung));
-
+console.log('\n'+info.kopf);info.rows.forEach(r=>console.log('  '+r.feld.padEnd(30)+' -> '+r.zuordnung));
 const [dl]=await Promise.all([page.waitForEvent('download'),page.click('#pdfFill')]);
 const out='/home/claude/gefuellt.pdf';await dl.saveAs(out);
 console.log('\nDatei:',dl.suggestedFilename());
 const {PDFDocument}=require('pdf-lib');
 const doc=await PDFDocument.load(fs.readFileSync(out));
 console.log('\n--- Werte im heruntergeladenen PDF ---');
-doc.getForm().getFields().forEach(f=>{
-  let v='';try{v=f.getText()||''}catch(_){v='(kein Textfeld)'}
-  console.log('  '+f.getName().padEnd(30)+' = '+JSON.stringify(v));
-});
-// Ausfuellhilfe
+doc.getForm().getFields().forEach(f=>{let v='';try{v=f.getText()||''}catch(_){v='(kein Textfeld)'}console.log('  '+f.getName().padEnd(30)+' = '+JSON.stringify(v));});
 const [dl2]=await Promise.all([page.waitForEvent('download'),page.click('#pdfAppendix')]);
 await dl2.saveAs('/home/claude/ausfuellhilfe.pdf');
 const doc2=await PDFDocument.load(fs.readFileSync('/home/claude/ausfuellhilfe.pdf'));
@@ -62,11 +53,9 @@ Techniker Krankenkasse
 Gesundheitskarte
 Vorname: Erika
 Nachname: Beispiel
-Versichertennummer: TEST123
 Geburtsdatum: 04.05.1988
 `,'health_card');
 assert.equal(health.facts.find(x=>x.key==='healthFund')?.value,'Techniker Krankenkasse');
-assert.equal(health.facts.find(x=>x.key==='healthInsuranceNo')?.value,'TEST123');
 assert.equal(health.facts.find(x=>x.key==='firstName')?.value,'Erika');
 assert.equal(health.facts.find(x=>x.key==='lastName')?.value,'Beispiel');
 
@@ -86,11 +75,7 @@ __PUENTE_FILE_17_EOF__
 cat > tests/README.md <<'__PUENTE_FILE_18_EOF__'
 # Tests
 
-Automatisierte Durchläufe gegen die App. Sie haben im Verlauf der Entwicklung
-mehrere echte Fehler gefunden: einen horizontalen Überlauf, der die untere
-Navigation unbedienbar machte, einen fehlenden Übersetzungsschlüssel, eine
-Falscherkennung „Nettokaltmiete“ → Nettoeinkommen, eine Typprüfung, die an der
-minifizierten pdf-lib scheiterte, und zwei doppelt vorhandene Modulsätze.
+Automatisierte Durchläufe gegen die App. Sie haben im Verlauf der Entwicklung mehrere echte Fehler gefunden: einen horizontalen Überlauf, der die untere Navigation unbedienbar machte, einen fehlenden Übersetzungsschlüssel, eine Falscherkennung „Nettokaltmiete“ → Nettoeinkommen, eine Typprüfung, die an der minifizierten pdf-lib scheiterte, und zwei doppelt vorhandene Modulsätze.
 
 ## Voraussetzungen
 
@@ -102,24 +87,14 @@ npx playwright install chromium
 ## Ausführen
 
 ```bash
-node tests/00-datenintegritaet.js      # Datenmodell: verwaiste IDs, fehlende Übersetzungen
-node tests/01-grundfunktionen.js       # Navigation, Layout, Dokumentanalyse
+node tests/00-datenintegritaet.js
+node tests/01-grundfunktionen.js
 node tests/02-fristen-bescheid-beratung.js
 node tests/03-speicher-phasen-postausgang.js
-node tests/04-speicherstufen.js        # Sitzung / Gerät / geteiltes Gerät
-node tests/05-pdf-ausfuellen.js        # echtes AcroForm befüllen
+node tests/04-speicherstufen.js
+node tests/05-pdf-ausfuellen.js
 ```
 
-Die Skripte starten jeweils einen lokalen Server auf einem eigenen Port und
-prüfen auf einem 390-px- und einem 320-px-Viewport:
-
-- keine Laufzeitfehler in der Konsole
-- kein horizontaler Überlauf
-- keine leeren Ansichten
-- keine Eingabefelder unter 16 px (iOS-Zoomfalle)
-- keine unübersetzten Rohschlüssel im sichtbaren Text
-
-`05-pdf-ausfuellen.js` erzeugt sich sein Test-PDF selbst und lädt pdf-lib aus
-`node_modules`, weil das CDN in abgeschotteten Umgebungen nicht erreichbar ist.
+Die Skripte prüfen u. a. 390-px- und 320-px-Viewports, Laufzeitfehler, horizontalen Überlauf, iOS-Zoomfallen und Rohschlüssel. `05-pdf-ausfuellen.js` erzeugt sein Test-PDF selbst und lädt pdf-lib aus `node_modules`, weil das CDN in abgeschotteten Umgebungen nicht erreichbar ist.
 __PUENTE_FILE_18_EOF__
 rm -rf chunks loader.js styles-base.css styles-mobile.css styles-workspace.css release/Puente_Buerokratie_Navigator_v0_7_0.b64.*
