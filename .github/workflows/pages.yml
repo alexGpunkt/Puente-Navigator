@@ -62,6 +62,10 @@ jobs:
           rsync -a --exclude='.git' --exclude='.github' --exclude='_site' --exclude='release' ./ _site/
           mkdir -p _site/vendor/pdfjs _site/vendor/tesseract/lang _site/vendor/tesseract-core _site/vendor/whisper
 
+          curl --fail --location --retry 4 --retry-all-errors \
+            https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js \
+            -o _site/vendor/pdf-lib.min.js
+
           # QR: requested real CDN-path check. Failure is fatal.
           curl --fail --location --retry 4 --retry-all-errors \
             https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js \
@@ -123,6 +127,20 @@ jobs:
             vendor/whisper/main.js vendor/whisper/ggml-tiny-q5_1.bin; do
             test -s "_site/$f"
           done
+
+      - name: Persist tested vendor assets in the repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf vendor
+          cp -a _site/vendor vendor
+          git add vendor
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Vendor tested offline runtime assets [skip ci]"
+            git push origin HEAD:main
+          fi
 
       - name: QR browser smoke test
         shell: bash
