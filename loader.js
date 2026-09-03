@@ -1,5 +1,5 @@
 (() => {
-  const PARTS = ["chunks/data-01.txt", "chunks/data-02.txt", "chunks/data-03.txt", "chunks/data-04.txt", "chunks/data-05.txt", "chunks/data-06.txt", "chunks/data-07.txt", "chunks/data-08.txt", "chunks/app-01.txt", "chunks/app-02.txt", "chunks/app-03.txt", "chunks/app-04.txt", "chunks/app-05.txt", "chunks/app-06.txt", "chunks/app-07.txt", "chunks/app-08.txt", "chunks/app-09.txt"];
+  const PARTS = ["chunks/data-01.txt", "chunks/data-02.txt", "chunks/data-03.txt", "chunks/data-04.txt", "chunks/data-05.txt", "chunks/data-06.txt", "chunks/data-07.txt", "chunks/data-08.txt", "chunks/app-01.txt"];
   async function boot() {
     try {
       const parts = await Promise.all(PARTS.map(async p => {
