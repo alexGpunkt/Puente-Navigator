@@ -2,7 +2,7 @@ name: Test and deploy Puente
 
 on:
   push:
-    branches: [main]
+    branches: [main, v070-bootstrap]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: puente-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -26,25 +26,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APPLIED=0
           if compgen -G '.deploy/direct-source.part-*' > /dev/null; then
             cat .deploy/direct-source.part-* > /tmp/direct-source.sh
             bash /tmp/direct-source.sh
-            rm -f .deploy/direct-source.part-* .deploy/direct-source.sh
-            APPLIED=1
+            rm -rf .deploy
+            echo "PUENTE_BOOTSTRAP_APPLIED=1" >> "$GITHUB_ENV"
           elif [ -f .deploy/direct-source.sh ]; then
             bash .deploy/direct-source.sh
-            rm -f .deploy/direct-source.sh
-            APPLIED=1
-          fi
-          if [ "$APPLIED" = 1 ]; then
-            git add -A
-            if ! git diff --cached --quiet; then
-              git config user.name "github-actions[bot]"
-              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              git commit -m "Expand Puente v0.7.0 direct source [skip ci]"
-              git push origin HEAD:main
-            fi
+            rm -rf .deploy
+            echo "PUENTE_BOOTSTRAP_APPLIED=1" >> "$GITHUB_ENV"
           fi
 
       - name: Syntax and extraction tests
@@ -61,13 +51,12 @@ jobs:
           rm -rf _site
           mkdir -p _site
           rsync -a \
-            --exclude='.git' --exclude='.github' --exclude='_site' --exclude='release' \
+            --exclude='.git' --exclude='.github' --exclude='_site' --exclude='release' --exclude='.deploy' \
             --exclude='chunks' --exclude='loader.js' \
             --exclude='styles-base.css' --exclude='styles-mobile.css' --exclude='styles-workspace.css' \
             ./ _site/
           mkdir -p _site/vendor/pdfjs _site/vendor/tesseract/lang _site/vendor/tesseract-core _site/vendor/whisper
 
-          # Keep the already-local pdf-lib when present; otherwise obtain the pinned version.
           if [ -s vendor/pdf-lib.min.js ]; then
             cp vendor/pdf-lib.min.js _site/vendor/pdf-lib.min.js
           else
@@ -76,7 +65,6 @@ jobs:
               -o _site/vendor/pdf-lib.min.js
           fi
 
-          # QR: real network-path verification, then same-origin deployment copy.
           curl --fail --location --retry 4 --retry-all-errors \
             https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js \
             -o _site/vendor/qrcode.min.js
@@ -117,7 +105,6 @@ jobs:
               -o "_site/vendor/tesseract/lang/${lang}.traineddata.gz"
           done
 
-          # Local browser Whisper runtime and multilingual tiny model, pinned and verified.
           curl --fail --location --retry 4 --retry-all-errors \
             https://raw.githubusercontent.com/Prozectz/Whisper.cpp/354aad88c3f8fd274808c21f6bb686a1495979b4/main.js \
             -o _site/vendor/whisper/main.js
@@ -145,9 +132,8 @@ jobs:
           cat > _site/qr-smoke.html <<'HTML'
           <!doctype html><meta charset="utf-8"><body data-qr="pending"><canvas id="q"></canvas>
           <script src="vendor/qrcode.min.js"></script><script>
-          try {
-            QRCode.toCanvas(document.getElementById('q'),'Puente QR smoke',{width:180},function(err){document.body.dataset.qr=err?'fail':'ok'});
-          } catch(e) { document.body.dataset.qr='fail'; }
+          try { QRCode.toCanvas(document.getElementById('q'),'Puente QR smoke',{width:180},function(err){document.body.dataset.qr=err?'fail':'ok'}); }
+          catch(e) { document.body.dataset.qr='fail'; }
           </script></body>
           HTML
           python3 -m http.server 8123 --directory _site >/tmp/puente-http.log 2>&1 &
@@ -177,13 +163,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf /tmp/puente-node
+          mkdir -p /tmp/puente-node
+          cd /tmp/puente-node
           npm init -y >/dev/null 2>&1
           npm install --no-save playwright@1.55.0 pdf-lib@1.17.1
           npx playwright install --with-deps chromium
+          export NODE_PATH=/tmp/puente-node/node_modules
+          cd "$GITHUB_WORKSPACE"
           sudo mkdir -p /home/claude
           sudo rm -rf /home/claude/app
           sudo ln -s "$GITHUB_WORKSPACE" /home/claude/app
-          node - <<'NODE'
+          NODE_PATH="$NODE_PATH" node - <<'NODE'
           const fs=require('fs');
           const {PDFDocument}=require('pdf-lib');
           (async()=>{
@@ -198,34 +189,38 @@ jobs:
             fs.writeFileSync('/home/claude/testformular.pdf',await p.save());
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
-          node tests/01-grundfunktionen.js "$GITHUB_WORKSPACE"
-          node tests/02-fristen-bescheid-beratung.js
-          node tests/03-speicher-phasen-postausgang.js
-          node tests/04-speicherstufen.js
-          node tests/05-pdf-ausfuellen.js
+          NODE_PATH="$NODE_PATH" node tests/01-grundfunktionen.js "$GITHUB_WORKSPACE"
+          NODE_PATH="$NODE_PATH" node tests/02-fristen-bescheid-beratung.js
+          NODE_PATH="$NODE_PATH" node tests/03-speicher-phasen-postausgang.js
+          NODE_PATH="$NODE_PATH" node tests/04-speicherstufen.js
+          NODE_PATH="$NODE_PATH" node tests/05-pdf-ausfuellen.js
 
-      - name: Persist tested offline runtime assets
+      - name: Persist tested source and offline runtime assets
         shell: bash
         run: |
           set -euo pipefail
           rm -rf vendor
           cp -a _site/vendor vendor
-          git add vendor
+          rm -rf release .deploy chunks loader.js styles-base.css styles-mobile.css styles-workspace.css
+          git add -A
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Vendor tested offline runtime assets [skip ci]"
-            git push origin HEAD:main
+            git commit -m "Publish tested Puente v0.7.0 source and offline runtime [skip ci]"
+            git push origin HEAD:"${GITHUB_REF_NAME}"
           fi
 
       - uses: actions/configure-pages@v5
+        if: github.ref_name == 'main'
         with:
           enablement: true
       - uses: actions/upload-pages-artifact@v3
+        if: github.ref_name == 'main'
         with:
           path: _site
 
   deploy:
+    if: github.ref_name == 'main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
