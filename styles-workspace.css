@@ -1,0 +1,70 @@
+/* v0.3 – lokaler Fall-Arbeitsbereich und Dokumentanalyse */
+.case-hero{background:linear-gradient(145deg,#fff,#f2f7fb);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:var(--shadow)}
+.case-hero h1{margin:0 0 6px;font-size:1.35rem}.case-hero p{margin:0;color:var(--muted);line-height:1.42}
+.upload-zone{display:block;border:2px dashed #9fb6c8;border-radius:18px;background:#f8fbfd;padding:18px;text-align:center;margin:14px 0;transition:.15s}
+.upload-zone.drag{border-color:var(--brand2);background:#eef7fd}.upload-zone input{display:none}
+.upload-zone .upload-icon{font-size:2.2rem}.upload-zone h3{margin:8px 0 4px}.upload-zone p{margin:0;color:var(--muted);font-size:.86rem}
+.doc-list{display:grid;gap:10px}.doc-item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px}
+.doc-item-head{display:flex;gap:10px;align-items:flex-start}.doc-thumb{width:48px;height:48px;border-radius:12px;background:var(--surface2);display:grid;place-items:center;font-size:1.35rem;overflow:hidden;flex:0 0 auto}
+.doc-thumb img{width:100%;height:100%;object-fit:cover}.doc-main{flex:1;min-width:0}.doc-main h3{margin:0;font-size:.94rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.doc-main p{margin:3px 0 0;color:var(--muted);font-size:.78rem;line-height:1.35}
+.doc-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.mini-btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 8px;font-size:.76rem}.mini-btn.primary{background:var(--accent);color:var(--brand);border-color:#bcd4e6;font-weight:700}.mini-btn.danger{color:var(--bad);background:#fff7f7}
+.analysis-bar{height:7px;background:#e7edf2;border-radius:999px;overflow:hidden;margin-top:8px}.analysis-bar span{display:block;height:100%;background:var(--brand2);width:0;transition:width .2s}
+.fact-list{display:grid;gap:8px;margin-top:10px}.fact{border:1px solid var(--line);border-radius:13px;padding:10px;background:#fbfdff}.fact.approved{border-color:#9bc9ad;background:#f3fbf6}.fact.rejected{opacity:.5}
+.fact-top{display:flex;justify-content:space-between;gap:8px}.fact-label{font-weight:800;font-size:.82rem}.confidence{font-size:.7rem;color:var(--muted)}
+.fact input{width:100%;border:1px solid var(--line);border-radius:9px;padding:7px 8px;margin-top:6px;background:#fff}.fact-actions{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.case-fact-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.case-fact{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px}.case-fact small{display:block;color:var(--muted);margin-bottom:3px}.case-fact strong{word-break:break-word}
+.detect-pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 8px;background:#eef4f8;color:var(--muted);font-size:.72rem;font-weight:700}.detect-pill.high{background:#e8f6ee;color:var(--ok)}.detect-pill.mid{background:#fff4de;color:var(--warn)}
+.manual-text{width:100%;min-height:130px;border:1px solid var(--line);border-radius:13px;padding:10px;background:#fff;resize:vertical}
+.local-banner{border:1px solid #b7d4c3;background:#f4fbf6;border-radius:15px;padding:11px;margin:12px 0;font-size:.84rem;line-height:1.4}.local-banner strong{color:var(--ok)}
+.case-summary-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.hidden-file-input{display:none}
+.ocr-note{font-size:.76rem;color:var(--muted);line-height:1.4;margin-top:8px}
+.doc-type-select{border:1px solid var(--line);border-radius:9px;padding:6px 8px;background:white;font-size:.78rem;max-width:100%}
+.empty-illustration{font-size:2.5rem;margin-bottom:8px}
+
+
+/* v0.4 – druckfertige Fallakte / Antragssatz */
+.dossier-toolbar{position:sticky;top:var(--topbar-h);z-index:8;display:flex;gap:8px;flex-wrap:wrap;padding:10px;background:rgba(244,247,250,.96);border:1px solid var(--line);border-radius:16px;margin-bottom:14px;backdrop-filter:blur(10px)}
+.dossier{max-width:850px;margin:0 auto}
+.dossier-page{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;margin:0 0 14px;box-shadow:var(--shadow)}
+.dossier-cover{min-height:620px;display:flex;flex-direction:column;justify-content:space-between}
+.dossier-kicker{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.dossier-title{font-size:2rem;line-height:1.08;margin:12px 0 8px;color:var(--brand)}
+.dossier-subtitle{font-size:1.05rem;color:var(--muted);line-height:1.45}
+.dossier-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:22px 0}
+.metric{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fbfdff}
+.metric strong{display:block;font-size:1.35rem;color:var(--brand)}
+.metric small{color:var(--muted);font-size:.72rem}
+.readiness-ring{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--ok) var(--ready-angle,0deg),#e7edf2 0);position:relative}
+.readiness-ring:after{content:"";position:absolute;inset:9px;border-radius:50%;background:white}
+.readiness-ring strong{position:relative;z-index:1;font-size:1.15rem;color:var(--brand)}
+.cover-status{display:flex;align-items:center;gap:16px;margin:18px 0}
+.dossier-section-title{font-size:1.2rem;margin:0 0 12px;color:var(--brand)}
+.dossier-table{width:100%;border-collapse:collapse;font-size:.84rem}
+.dossier-table th,.dossier-table td{border-bottom:1px solid var(--line);padding:8px 7px;text-align:left;vertical-align:top}
+.dossier-table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);background:#f7fafc}
+.check-row{display:grid;grid-template-columns:28px 1fr auto;gap:9px;align-items:start;padding:9px 0;border-bottom:1px solid var(--line)}
+.check-mark{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-weight:800;background:#eef2f5;color:var(--muted)}
+.check-mark.have{background:#e8f6ee;color:var(--ok)}.check-mark.missing{background:#fdeaea;color:var(--bad)}.check-mark.unsure{background:#fff2d9;color:var(--warn)}
+.missing-box{border-left:4px solid var(--bad);background:#fff8f8;border-radius:12px;padding:11px 12px;margin:8px 0}
+.missing-box.unsure{border-left-color:var(--warn);background:#fffaf0}
+.evidence-item{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.evidence-no{width:42px;height:34px;border-radius:10px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800}
+.evidence-facts{font-size:.76rem;color:var(--muted);margin-top:5px;line-height:1.4}
+.appendix-image{max-width:100%;max-height:930px;display:block;margin:12px auto;border:1px solid var(--line);border-radius:8px}
+.dossier-foot{font-size:.7rem;color:var(--muted);margin-top:18px;padding-top:8px;border-top:1px solid var(--line)}
+.print-only{display:none}
+@media(max-width:650px){.dossier-metrics{grid-template-columns:repeat(2,1fr)}.dossier-page{padding:15px}.dossier-title{font-size:1.65rem}.evidence-item{grid-template-columns:42px 1fr}.evidence-item>.badge{grid-column:2}}
+@media print{
+  @page{size:A4;margin:14mm 13mm 14mm 13mm}
+  .topbar,.bottom-nav,.dossier-toolbar{display:none!important}
+  body{background:#fff!important;padding:0!important}
+  .app-shell{max-width:none!important;width:100%!important;padding:0!important}
+  .dossier{max-width:none!important}
+  .dossier-page{border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;padding:0!important;page-break-after:always;min-height:0}
+  .dossier-page:last-child{page-break-after:auto}
+  .dossier-cover{min-height:255mm}
+  .print-only{display:block}
+  .screen-only{display:none!important}
+  .appendix-image{max-height:245mm;page-break-inside:avoid}
+  a{color:#000;text-decoration:none}
+}
