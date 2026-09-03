@@ -1,0 +1,154 @@
+name: Deploy Puente v0.6.0
+
+on:
+  push:
+    branches: [deploy-v060]
+    paths: ['.deploy/READY']
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: deploy-v060
+          fetch-depth: 0
+
+      - name: Reconstruct uploaded v0.6.0 source
+        shell: bash
+        run: |
+          cat .deploy/part-*.txt | base64 -d > /tmp/puente-v060.zip
+          echo "52a4b694da53a69c9386aee10fb975430c0848c47cf0580e6306c5ee382d4b47  /tmp/puente-v060.zip" | sha256sum -c -
+          rm -rf chunks loader.js styles-base.css styles-mobile.css styles-workspace.css
+          unzip -o /tmp/puente-v060.zip -d .
+
+      - name: Verify QR CDN and vendor browser runtime locally
+        shell: bash
+        run: |
+          mkdir -p vendor tests
+          QR_URL='https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js'
+          curl --fail --location --retry 3 --connect-timeout 15 "$QR_URL" -o vendor/qrcode.min.js
+          test -s vendor/qrcode.min.js
+          grep -q 'toCanvas' vendor/qrcode.min.js
+          {
+            echo "QR_CDN_OK=$QR_URL"
+            echo "QR_BYTES=$(wc -c < vendor/qrcode.min.js)"
+            echo "QR_SHA256=$(sha256sum vendor/qrcode.min.js | cut -d' ' -f1)"
+          } > tests/CDN_CHECK.txt
+
+      - name: Restore local pdf-lib runtime
+        shell: bash
+        run: |
+          PDFLIB_URL='https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js'
+          curl --fail --location --retry 3 --connect-timeout 15 "$PDFLIB_URL" -o vendor/pdf-lib.min.js
+          test -s vendor/pdf-lib.min.js
+          grep -q 'PDFDocument' vendor/pdf-lib.min.js
+          {
+            echo "PDFLIB_LOCAL=vendor/pdf-lib.min.js"
+            echo "PDFLIB_BYTES=$(wc -c < vendor/pdf-lib.min.js)"
+          } >> tests/CDN_CHECK.txt
+
+      - name: Record voice/Whisper implementation status
+        shell: bash
+        run: |
+          if grep -Rni --exclude='CDN_CHECK.txt' --exclude-dir=.git -E 'whisper|whisper\.wasm|whisper\.js' .; then
+            echo 'WHISPER_REFERENCE_FOUND=true' >> tests/CDN_CHECK.txt
+            exit 1
+          else
+            echo 'WHISPER_REFERENCE_FOUND=false' >> tests/CDN_CHECK.txt
+            echo 'VOICE_IMPLEMENTATION=Browser SpeechRecognition/webkitSpeechRecognition; no Whisper CDN path in v0.6.0' >> tests/CDN_CHECK.txt
+          fi
+
+      - name: Make local runtimes available offline
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('sw.js')
+          s=p.read_text(encoding='utf-8')
+          needle='  "icons/icon.svg", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"'
+          replacement='  "vendor/pdf-lib.min.js", "vendor/qrcode.min.js",\n  "icons/icon.svg", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"'
+          if '"vendor/qrcode.min.js"' not in s:
+              if needle not in s:
+                  raise SystemExit('Service-worker asset insertion point not found')
+              s=s.replace(needle,replacement,1)
+          p.write_text(s,encoding='utf-8')
+
+      - name: Refresh README for actual runtime dependencies
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('README.md')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace(
+            'Für OCR, PDF-Auslese und PDF-Befüllung lädt der Browser bei Bedarf Tesseract.js,\nPDF.js und pdf-lib über öffentliche CDNs. Die Dokumente werden lokal verarbeitet\nund nicht an die CDNs übertragen.',
+            'Für OCR und PDF-Auslese lädt der Browser bei Bedarf Tesseract.js und PDF.js über öffentliche CDNs.\n**pdf-lib und die QR-Bibliothek werden lokal aus `vendor/` geladen**; der CDN-Pfad bleibt nur als Fallback erhalten.\nDie Dokumente werden lokal verarbeitet und nicht an die Bibliotheks-CDNs übertragen.'
+          )
+          s=s.replace(
+            '- **Fallübergabe per QR-Code** zwischen Berater- und Klientengerät.\n',
+            '- ~~Fallübergabe per QR-Code zwischen Berater- und Klientengerät.~~ **In v0.6.0 umgesetzt.**\n'
+          )
+          marker='`vendor/pdf-lib.min.js` liegt bei; der Lader nimmt zuerst die lokale Kopie und nur ersatzweise das CDN.'
+          if marker in s and '`vendor/qrcode.min.js`' not in s:
+              s=s.replace(marker, marker+'\n`vendor/qrcode.min.js` liegt ebenfalls lokal bei; QR funktioniert damit auch bei gesperrten externen CDNs.')
+          not_impl='## Nicht umgesetzt\n'
+          if not_impl in s and 'Whisper ist nicht Bestandteil' not in s:
+              s=s.replace(not_impl, not_impl+'- **Whisper ist nicht Bestandteil von v0.6.0.** Das geführte Diktat verwendet die Browser-API `SpeechRecognition`/`webkitSpeechRecognition`; dafür existiert in dieser Version kein Whisper-CDN-Pfad.\n')
+          p.write_text(s,encoding='utf-8')
+
+      - name: Static validation
+        shell: bash
+        run: |
+          set -e
+          for f in *.js tests/*.js; do node --check "$f"; done
+          node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
+          node tests/00-datenintegritaet.js
+          test -f vendor/pdf-lib.min.js
+          test -f vendor/qrcode.min.js
+          grep -q 'vendor/qrcode.min.js' sw.js
+          grep -q 'vendor/pdf-lib.min.js' sw.js
+
+      - name: Install browser test dependencies
+        shell: bash
+        run: |
+          npm init -y >/dev/null
+          npm install --no-save playwright pdf-lib@1.17.1
+          npx playwright install --with-deps chromium
+
+      - name: Browser smoke tests including local QR
+        shell: bash
+        run: |
+          sudo mkdir -p /home/claude
+          sudo ln -sfn "$GITHUB_WORKSPACE" /home/claude/app
+          node - <<'NODE'
+          const fs=require('fs'); const {PDFDocument}=require('pdf-lib');
+          (async()=>{const d=await PDFDocument.create();const p=d.addPage([595,842]);const f=d.getForm();
+          for(const [name,y] of [['Vorname',760],['Nachname',720],['Geburtsdatum',680],['IBAN',640],['Steuer-ID',600],['Kaltmiete',560]]){const t=f.createTextField(name);t.addToPage(p,{x:80,y,width:260,height:24});}
+          fs.writeFileSync('/home/claude/testformular.pdf',await d.save());})();
+          NODE
+          for t in tests/01-grundfunktionen.js tests/02-fristen-bescheid-beratung.js tests/03-speicher-phasen-postausgang.js tests/04-speicherstufen.js tests/05-pdf-ausfuellen.js; do
+            echo "===== $t ====="
+            node "$t" "$GITHUB_WORKSPACE"
+          done
+          node - <<'NODE'
+          const {chromium}=require('playwright'); const http=require('http'),fs=require('fs'),path=require('path');
+          const root=process.cwd();
+          const srv=http.createServer((q,s)=>{let p=q.url.split('?')[0]; if(p==='/')p='/index.html'; const f=path.join(root,p); fs.readFile(f,(e,d)=>{if(e){s.writeHead(404);return s.end()} s.writeHead(200);s.end(d)})});
+          (async()=>{await new Promise(r=>srv.listen(8151,r));const b=await chromium.launch();const p=await b.newPage();await p.goto('http://127.0.0.1:8151/');await p.addScriptTag({url:'http://127.0.0.1:8151/vendor/qrcode.min.js'});const api=await p.evaluate(()=>({QRCode:typeof QRCode,toCanvas:typeof QRCode?.toCanvas}));console.log('QR local runtime:',api);if(api.toCanvas!=='function')throw new Error('QRCode.toCanvas missing');await b.close();srv.close()})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          echo 'BROWSER_TESTS=passed' >> tests/CDN_CHECK.txt
+
+      - name: Create one clean deployment commit on main
+        shell: bash
+        run: |
+          rm -rf node_modules package.json package-lock.json .deploy .github/workflows/deploy-v060.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git reset --soft origin/main
+          git add -A
+          git commit -m 'Deploy Puente v0.6.0 with local QR and pdf-lib runtimes'
+          git push origin HEAD:main
