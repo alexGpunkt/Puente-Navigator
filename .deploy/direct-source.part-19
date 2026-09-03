@@ -1,0 +1,230 @@
+na prestación que ya cubra los costes de vivienda. Wohngeld puede ser una vía útil, especialmente con ingresos bajos propios.",de:"Es besteht ein Mietverhältnis und keine bereits genannte Leistung mit berücksichtigten Unterkunftskosten. Wohngeld kann daher ein sinnvoller Prüfweg sein, insbesondere bei niedrigem eigenem Einkommen."}
+        });
+      }else{
+        preferred="grundsicherung";
+      }
+    }
+
+    if(!blocks.length){
+      blocks.push({
+        icon:"✅",
+        title:{es:"La ruta elegida puede prepararse",de:"Der gewählte Weg kann vorbereitet werden"},
+        text:{es:"Las respuestas permiten filtrar documentos, anexos y campos de formulario. Revisa las advertencias antes de presentar.",de:"Die Antworten reichen aus, um Unterlagen, Anlagen und Formularfelder zu filtern. Hinweise vor der Abgabe prüfen."}
+      });
+    }
+    return {preferred,blocks};
+  }
+
+  function getAnnexes(p){
+    const out = new Map();
+    const add=(name,conditional=false)=>{ if(!out.has(name)||!conditional) out.set(name,{name,conditional}); };
+    APP_DATA.annexRules.base.forEach(x=>add(x));
+    if(p.housing==="rent") APP_DATA.annexRules.rent.forEach(x=>add(x));
+    arr(p.household).forEach(k => (APP_DATA.annexRules[k]||[]).forEach(x=>add(x,k==="wg")));
+    arr(p.income).forEach(k => (APP_DATA.annexRules[k]||[]).forEach(x=>add(x)));
+    arr(p.special).forEach(k => (APP_DATA.annexRules[k]||[]).forEach(x=>add(x,k==="pregnant")));
+    return [...out.values()];
+  }
+
+  function getRelevantRequirements(serviceId){
+    const base = APP_DATA.services[serviceId]?.requirements || [];
+    const p=state.profile||{};
+    return base.filter(([id])=>{
+      if(id==="residence_right") return p.citizenship==="non_eu" || p.citizenship==="unknown" || !p.citizenship;
+      if(["rental_contract","heating_costs","rent_payments"].includes(id)) return p.housing!=="owner" && p.housing!=="temporary";
+      if(id==="previous_benefits") return arr(p.history).includes("benefits3y") || ["sgb2","sgb12","asyl"].includes(p.housing_transfer);
+      if(id==="employment_end") return arr(p.history).includes("employment5y") && !arr(p.income).includes("employment");
+      if(id==="transfer_benefits") return p.housing_transfer!=="no" || arr(p.income).includes("alg1");
+      if(id==="special_deductions") return arr(p.special).some(x=>["disability","single_parent"].includes(x)) || arr(p.income).includes("employment");
+      return true;
+    });
+  }
+
+  function serviceCard(id){
+    const s=APP_DATA.services[id], p=serviceProgress(id);
+    return `<article class="card clickable" data-service="${id}">
+      <div class="card-icon">${s.icon}</div><h3>${tx(s.title)}</h3><p>${tx(s.subtitle)}</p>
+      <div class="meta"><span class="badge">${getRelevantRequirements(id).length} ${state.lang==="es"?"puntos":"Punkte"}</span>
+      ${p.have?`<span class="badge ok">${p.have}/${p.total} ✓</span>`:""}</div></article>`;
+  }
+
+  function serviceView(id){
+    const s=APP_DATA.services[id];
+    if(!s) return homeView();
+    const reqs=getRelevantRequirements(id), p=serviceProgress(id);
+    return `
+      <div class="service-head"><div class="big-icon">${s.icon}</div><div><h1>${tx(s.title)}</h1><p>${tx(s.subtitle)}</p></div></div>
+      <div class="notice">${tx(s.note)}</div>
+      ${Object.keys(state.profile||{}).length?`<div class="notice"><strong>🧭 ${state.lang==="es"?"Filtrado por el asistente":"Durch Assistent gefiltert"}:</strong> ${state.lang==="es"?"Solo se muestran los grupos de documentos que parecen relevantes según las respuestas.":"Es werden nur die nach den Antworten voraussichtlich relevanten Unterlagengruppen angezeigt."}</div>`:""}
+      ${id==="grundsicherung"?`<div class="notice warning"><strong>${tr("important")}:</strong> ${tr("evidenceLate")}</div>`:""}
+      ${id==="wohngeld"?`<div class="notice warning">${tr("berlinNote")}</div>`:""}
+      <div class="progress-box">
+        <div class="progress-row"><span>${tr("progress")}</span><span>${p.have}/${p.total} ${tr("ready")}</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:${p.pct}%"></div></div>
+      </div>
+      <div class="toolbar">
+        <button class="secondary-btn" id="printBtn">🖨️ ${tr("print")}</button>
+        <button class="primary-btn" data-fields="${id}">📝 ${state.lang==="es"?"Preparar campos":"Formularfelder vorbereiten"}</button>
+        <button class="ghost-btn" data-go="assistant">🧭 ${state.lang==="es"?"Modificar caso":"Fall anpassen"}</button>
+      </div>
+      ${id==="grundsicherung" && Object.keys(state.profile||{}).length ? `
+        <div class="section-title"><div><h2>${state.lang==="es"?"Anexos":"Anlagen"}</h2></div></div>
+        <div class="attachment-list">${getAnnexes(state.profile).map(a=>`<span class="attachment ${a.conditional?"":"required"}">${a.name}${a.conditional?" · ?":""}</span>`).join("")}</div>
+      `:""}
+      <div class="section-title"><div><h2>${state.lang==="es"?"Checklist de documentos":"Unterlagen-Checkliste"}</h2></div></div>
+      <section class="requirements">${reqs.map(([docId,kind])=>requirementCard(docId,kind)).join("")}</section>
+      <p class="small">${tr("legalNote")}</p>`;
+  }
+
+  function requirementCard(docId, kind){
+    const d=APP_DATA.documents[docId]; if(!d) return "";
+    const st=state.statuses[docId]||"";
+    return `<article class="req">
+      <div class="req-top"><div class="req-icon">${d.icon}</div><div class="req-main">
+        <h3>${tx(d.title)}</h3><p>${tx(d.desc)}</p>
+        <div class="meta"><span class="badge ${kind==="required"?"warn":""}">${kind==="required"?tr("required"):tr("conditional")}</span></div>
+      </div></div>
+      <div class="req-actions">
+        ${statusButton(docId,"have","✓",tr("statusHave"),st)}
+        ${statusButton(docId,"unsure","?",tr("statusUnsure"),st)}
+        ${statusButton(docId,"missing","✕",tr("statusMissing"),st)}
+        <button class="ghost-btn recovery-link" data-recovery="${docId}">🧭 ${tr("how")}</button>
+      </div></article>`;
+  }
+
+  function statusButton(docId,value,icon,label,current){
+    return `<button class="status-btn ${value} ${current===value?"selected":""}" data-status-doc="${docId}" data-status="${value}">${icon} ${label}</button>`;
+  }
+
+  function serviceProgress(id){
+    const reqs=getRelevantRequirements(id);
+    const have=reqs.filter(([docId])=>state.statuses[docId]==="have").length;
+    return {have,total:reqs.length,pct:reqs.length?Math.round(have/reqs.length*100):0};
+  }
+
+  function fieldsView(serviceId){
+    const map=APP_DATA.formMaps[serviceId];
+    if(!map) return `<div class="empty">No form map</div>`;
+    const activeForm = state.activeForm && map.forms.some(f=>f.id===state.activeForm) ? state.activeForm : map.forms[0].id;
+    const form = map.forms.find(f=>f.id===activeForm);
+    const visible = form.fields.filter(f=>state.showAllFields || fieldRelevant(f.when));
+
+    return `
+      <div class="service-head">
+        <div class="big-icon">📝</div>
+        <div><h1>${tx(map.title)}</h1><p>${state.lang==="es"?"Preparación campo por campo. Los valores escritos aquí no pasan a localStorage.":"Feld-für-Feld-Vorbereitung. Hier eingetragene Werte werden nicht im localStorage gespeichert."}</p></div>
+      </div>
+      <div class="privacy-session">🔒 ${state.lang==="es"
+        ?"Los valores personales escritos en esta pantalla se guardan solo en sessionStorage: se eliminan al cerrar la sesión del navegador o al borrar el caso. No se envían a ningún servidor."
+        :"Persönliche Werte auf dieser Seite werden nur im sessionStorage gespeichert: Sie verschwinden beim Ende der Browsersitzung oder beim Löschen des Falls. Es erfolgt keine Serverübertragung."}</div>
+
+      ${map.forms.length>1?`<div class="form-tabs" role="tablist">
+        ${map.forms.map(f=>`<button type="button" role="tab" aria-selected="${f.id===activeForm}" class="form-tab ${f.id===activeForm?"active":""}" data-form-tab="${f.id}">${esc(tx(f.title))}</button>`).join("")}
+      </div>`:""}
+
+      <div class="toolbar">
+        <a class="secondary-btn" href="${form.source}" target="_blank" rel="noopener">${state.lang==="es"?"Abrir formulario oficial":"Offizielles Formular öffnen"} ↗</a>
+        <button class="ghost-btn" id="toggleAllFields">${state.showAllFields?(state.lang==="es"?"Ocultar no relevantes":"Unnötige ausblenden"):(state.lang==="es"?"Mostrar todos":"Alle Felder anzeigen")}</button>
+        <button class="secondary-btn" id="printBtn">🖨️ ${tr("print")}</button>
+        ${FEATURES?.hasPreparedValues()?`<button class="primary-btn" data-go="fill">🖊️ ${L("Rellenar el PDF oficial","Amtliches PDF ausfüllen")}</button>`:""}
+      </div>
+
+      <div class="notice">
+        <strong>${state.lang==="es"?"Visible ahora":"Jetzt sichtbar"}:</strong> ${visible.length}/${form.fields.length}
+        ${state.lang==="es"?" campos según las respuestas del asistente.":" Felder entsprechend den Assistenten-Antworten."}
+      </div>
+
+      <section class="field-group">
+        ${visible.map(f=>formField(form.id,f)).join("")}
+      </section>
+
+      <div class="toolbar">
+        <button class="ghost-btn" data-go="assistant">← ${state.lang==="es"?"Volver al resultado":"Zurück zum Ergebnis"}</button>
+        <button class="danger-btn" id="clearFormValues">🧹 ${state.lang==="es"?"Borrar valores de esta sesión":"Sitzungswerte löschen"}</button>
+      </div>
+      <p class="small">${tr("legalNote")}</p>
+    `;
+  }
+
+  function formField(formId,f){
+    const key=`${formId}:${f.no}`;
+    const val=formValues[key]||"";
+    const rel=fieldRelevant(f.when);
+    return `<article class="form-field ${rel?"relevant":"conditional"}">
+      <div class="field-head">
+        <span class="field-no">${esc(f.no)}</span>
+        <div class="field-title">${esc(tx(f.title))}</div>
+        ${f.helpDoc?`<button class="icon-btn" type="button" data-recovery="${f.helpDoc}" title="${tr("how")}">🧭</button>`:""}
+      </div>
+      ${f.help?`<div class="field-help">${esc(tx(f.help))}</div>`:""}
+      <input class="session-input" data-form-key="${esc(key)}" value="${esc(val)}"
+        placeholder="${state.lang==="es"?"Valor / nota (solo esta sesión)":"Wert / Notiz (nur diese Sitzung)"}">
+    </article>`;
+  }
+
+  function fieldRelevant(when){
+    const p=state.profile||{}, hh=arr(p.household), inc=arr(p.income), sp=arr(p.special), hist=arr(p.history);
+    switch(when){
+      case "always": return true;
+      case "temporary": return p.housing==="temporary";
+      case "rent": return p.housing==="rent";
+      case "owner": return p.housing==="owner";
+      case "foreign": return ["eu","non_eu","unknown"].includes(p.citizenship);
+      case "asyl": return p.housing_transfer==="asyl";
+      case "no_bank": return false;
+      case "pregnant": return sp.includes("pregnant");
+      case "under25_parent_outside": return sp.includes("under25_parent_outside");
+      case "education": return ["student","training","unknown"].includes(p.education);
+      case "special_diet": return sp.includes("special_diet");
+      case "disability": return sp.includes("disability");
+      case "special_need": return sp.includes("special_need");
+      case "institution": return sp.includes("institution");
+      case "benefits3y": return hist.includes("benefits3y") || ["sgb2","sgb12","asyl"].includes(p.housing_transfer);
+      case "employment5y": return hist.includes("employment5y");
+      case "self_history_or_current": return hist.includes("self5y") || inc.includes("self_employed");
+      case "replacement_or_alg1": return hist.includes("replacement5y") || inc.includes("alg1");
+      case "service5y": return hist.includes("service5y");
+      case "care5y": return hist.includes("care5y");
+      case "history_empty": return hist.length===0;
+      case "accident": return sp.includes("accident");
+      case "not_alone": return !hh.includes("alone") && hh.length>0;
+      case "employment": return inc.includes("employment");
+      case "self_current": return inc.includes("self_employed");
+      case "children": return hh.includes("child_u15") || hh.includes("child_15_24");
+      case "wg": return hh.includes("wg");
+      default: return true;
+    }
+  }
+
+
+  function caseView(){
+    const docs=docSession.docs||[];
+    const facts=docSession.approvedFacts||{};
+    const statusEntries=Object.entries(state.statuses||{});
+    return `
+      <div class="case-hero">
+        <h1>📎 ${state.lang==="es"?"Caso y extracción local de datos":"Fall & lokale Datenerfassung"}</h1>
+        <p>${state.lang==="es"
+          ?"Añade documentos, fotografía tarjetas o selecciona una grabación. Puente extrae propuestas localmente y las transfiere a los formularios tras tu confirmación."
+          :"Dokumente hinzufügen, Karten fotografieren oder eine Audioaufnahme auswählen. Puente extrahiert Vorschläge lokal und überträgt sie nach deiner Bestätigung in die Formulare."}</p>
+      </div>
+      <div class="local-banner"><strong>🔒 ${state.lang==="es"?"Procesamiento local":"Lokale Verarbeitung"}:</strong> ${state.lang==="es"
+        ?"Fotos, PDFs y audio no se suben. OCR, lectura de PDF y Whisper se ejecutan en el dispositivo. El texto completo y las transcripciones no se guardan de forma persistente."
+        :"Fotos, PDFs und Audio werden nicht hochgeladen. OCR, PDF-Lesen und Whisper laufen auf dem Gerät. Volltext und Transkripte werden nicht dauerhaft gespeichert."}</div>
+
+      <label class="upload-zone" id="uploadZone" for="caseFiles">
+        <div class="upload-icon">📷</div>
+        <h3>${state.lang==="es"?"Fotografiar o añadir documentos":"Dokumente fotografieren oder hinzufügen"}</h3>
+        <p>${state.lang==="es"?"Imágenes JPG/PNG/WebP y PDF · máximo 25 MB por archivo":"JPG/PNG/WebP und PDF · max. 25 MB je Datei"}</p>
+        <input id="caseFiles" type="file" accept="image/*,application/pdf" multiple>
+      </label>
+      <div class="capture-grid">
+        <div class="capture-card">
+          <strong>💳 ${state.lang==="es"?"Tarjeta bancaria o sanitaria":"Bank- oder Gesundheitskarte"}</strong>
+          <p>${state.lang==="es"?"Reconoce nombre, IBAN, banco, Krankenkasse y número de asegurado. Por seguridad no se extraen PAN, CVV ni fecha de validez de tarjetas de pago.":"Erkennt Name, IBAN, Bank, Krankenkasse und Versichertennummer. Zahlungs-PAN, CVV und Gültigkeitsdatum werden aus Sicherheitsgründen nicht extrahiert."}</p>
+          <button class="secondary-btn" id="cardCameraBtn">📇 ${state.lang==="es"?"Fotografiar tarjeta":"Karte fotografieren"}</button>
+          <input class="hidden-file-input" id="cardCameraInput" type="file" accept="image/*" capture="environment">
+        </div>
+        <div class="capture-card">
+          <strong>🎙️ ${state.lang==="es"?"Grabación de audio":"Audioaufnahme"}</strong>
+          <p>${state.lang==="es"?"Whisper transcribe localmente y propone IBAN, nombre, fecha de nacimiento, dirección, Krankenkasse y otros datos reconocibles.":"
