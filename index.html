@@ -16,9 +16,22 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="stylesheet" href="styles-base.css">
-  <link rel="stylesheet" href="styles-workspace.css">
-  <link rel="stylesheet" href="styles-mobile.css">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // Whisper/WASM mit Threads benoetigt COOP/COEP. GitHub Pages kann diese
+    // Header nicht selbst setzen; derselbe Puente-Service-Worker setzt sie
+    // fuer same-origin Antworten. Ein einmaliger Reload aktiviert die Kontrolle.
+    (()=>{
+      if(!("serviceWorker" in navigator) || self.crossOriginIsolated)return;
+      navigator.serviceWorker.register("sw.js").then(()=>navigator.serviceWorker.ready).then(()=>{
+        if(self.crossOriginIsolated){sessionStorage.removeItem("puente-coi-reload");return;}
+        if(!sessionStorage.getItem("puente-coi-reload")){
+          sessionStorage.setItem("puente-coi-reload","1");
+          location.reload();
+        }
+      }).catch(()=>{});
+    })();
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#app">Ir al contenido</a>
@@ -29,8 +42,9 @@
       <span class="brand-text"><strong>Puente</strong><small id="brandSubtitle">Ayuda con trámites en Alemania</small></span>
     </button>
     <div class="top-actions">
+      <button id="readBtn" class="icon-btn" type="button" aria-pressed="false" aria-label="Vorlesen / Leer en voz alta" hidden><span aria-hidden="true">🔊</span></button>
       <button id="langBtn" class="chip" type="button" aria-label="Sprache wechseln / Cambiar idioma">DE</button>
-      <button id="privacyBtn" class="icon-btn" type="button" aria-label="Privacidad"><span aria-hidden="true">🔒</span></button>
+      <button id="settingsBtn" class="icon-btn" type="button" aria-label="Einstellungen / Ajustes"><span aria-hidden="true">⚙️</span></button>
     </div>
   </header>
 
@@ -41,8 +55,8 @@
     <button type="button" data-route="home" class="nav-btn active"><span aria-hidden="true">🏠</span><small data-i18n="navHome">Inicio</small></button>
     <button type="button" data-route="assistant" class="nav-btn"><span aria-hidden="true">🧭</span><small data-i18n="navAssistant">Asistente</small></button>
     <button type="button" data-route="case" class="nav-btn"><span aria-hidden="true">📎</span><small id="caseNavLabel" data-i18n="navCase">Caso</small></button>
-    <button type="button" data-route="docs" class="nav-btn"><span aria-hidden="true">📂</span><small data-i18n="navDocs">Documentos</small></button>
-    <button type="button" data-route="lost" class="nav-btn"><span aria-hidden="true">🔥</span><small data-i18n="navLost">Perdidos</small></button>
+    <button type="button" data-route="deadlines" class="nav-btn"><span aria-hidden="true">⏳</span><small data-i18n="navDeadlines">Plazos</small></button>
+    <button type="button" data-route="more" class="nav-btn"><span aria-hidden="true">⋯</span><small data-i18n="navMore">Más</small></button>
   </nav>
 
   <dialog id="modal" class="modal" aria-labelledby="modalTitle">
@@ -57,6 +71,11 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="loader.js"></script>
+  <script src="storage.js"></script>
+  <script src="voice.js"></script>
+  <script src="capture.js"></script>
+  <script src="data.js"></script>
+  <script src="features.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

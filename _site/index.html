@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#12385b" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1b26" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Navegador bilingüe de trámites para personas hispanohablantes en Alemania.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Puente">
+  <meta name="format-detection" content="telephone=no">
+  <title>Puente · Ayuda con trámites</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // Whisper/WASM mit Threads benoetigt COOP/COEP. GitHub Pages kann diese
+    // Header nicht selbst setzen; derselbe Puente-Service-Worker setzt sie
+    // fuer same-origin Antworten. Ein einmaliger Reload aktiviert die Kontrolle.
+    (()=>{
+      if(!("serviceWorker" in navigator) || self.crossOriginIsolated)return;
+      navigator.serviceWorker.register("sw.js").then(()=>navigator.serviceWorker.ready).then(()=>{
+        if(self.crossOriginIsolated){sessionStorage.removeItem("puente-coi-reload");return;}
+        if(!sessionStorage.getItem("puente-coi-reload")){
+          sessionStorage.setItem("puente-coi-reload","1");
+          location.reload();
+        }
+      }).catch(()=>{});
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#app">Ir al contenido</a>
+
+  <header class="topbar">
+    <button id="homeBtn" class="brand-btn" type="button" aria-label="Inicio">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span class="brand-text"><strong>Puente</strong><small id="brandSubtitle">Ayuda con trámites en Alemania</small></span>
+    </button>
+    <div class="top-actions">
+      <button id="readBtn" class="icon-btn" type="button" aria-pressed="false" aria-label="Vorlesen / Leer en voz alta" hidden><span aria-hidden="true">🔊</span></button>
+      <button id="langBtn" class="chip" type="button" aria-label="Sprache wechseln / Cambiar idioma">DE</button>
+      <button id="settingsBtn" class="icon-btn" type="button" aria-label="Einstellungen / Ajustes"><span aria-hidden="true">⚙️</span></button>
+    </div>
+  </header>
+
+  <main id="app" class="app-shell" tabindex="-1"></main>
+  <p id="routeAnnouncer" class="sr-only" aria-live="polite"></p>
+
+  <nav class="bottom-nav" aria-label="Navegación">
+    <button type="button" data-route="home" class="nav-btn active"><span aria-hidden="true">🏠</span><small data-i18n="navHome">Inicio</small></button>
+    <button type="button" data-route="assistant" class="nav-btn"><span aria-hidden="true">🧭</span><small data-i18n="navAssistant">Asistente</small></button>
+    <button type="button" data-route="case" class="nav-btn"><span aria-hidden="true">📎</span><small id="caseNavLabel" data-i18n="navCase">Caso</small></button>
+    <button type="button" data-route="deadlines" class="nav-btn"><span aria-hidden="true">⏳</span><small data-i18n="navDeadlines">Plazos</small></button>
+    <button type="button" data-route="more" class="nav-btn"><span aria-hidden="true">⋯</span><small data-i18n="navMore">Más</small></button>
+  </nav>
+
+  <dialog id="modal" class="modal" aria-labelledby="modalTitle">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <h2 id="modalTitle"></h2>
+        <button class="icon-btn" type="submit" value="cancel" aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="storage.js"></script>
+  <script src="voice.js"></script>
+  <script src="capture.js"></script>
+  <script src="data.js"></script>
+  <script src="features.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

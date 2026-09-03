@@ -54,6 +54,7 @@ window.PuenteVoice = function (ctx) {
       .replace(/[·•→↗✓✕⏳📅⚖️🔒🤝🖊️📎📂🔥🏠🧭⋯]/g, " ")
       .trim();
     if (!clean) return false;
+    // Lange Texte in Sätze zerlegen: einige mobile Stimmen brechen sonst ab.
     const chunks = clean.match(/[^.!?]{1,180}([.!?]|$)/g) || [clean];
     chunks.forEach((part, i) => {
       const u = new SpeechSynthesisUtterance(part.trim());
@@ -69,6 +70,7 @@ window.PuenteVoice = function (ctx) {
 
   function isSpeaking() { return speaking; }
 
+  /** Liest die aktuelle Ansicht vor, ohne Bedienelemente mitzusprechen. */
   function readCurrentView() {
     const root = document.querySelector("#app");
     if (!root) return false;
@@ -215,6 +217,10 @@ window.PuenteVoice = function (ctx) {
 
   /* ------------------------------------------ Geführtes Diktat für ein Feld */
 
+  /**
+   * Fragt genau einen Wert ab und legt das Ergebnis zur Bestätigung vor.
+   * @returns {Promise<string|null>} bestätigter Wert oder null
+   */
   async function dictateField({ question, kind = "text" }) {
     if (!canListen()) { ctx.toast(L("Este navegador no reconoce voz.", "Dieser Browser erkennt keine Sprache.")); return null; }
     if (!listenConsent() && !(await askConsent())) return null;

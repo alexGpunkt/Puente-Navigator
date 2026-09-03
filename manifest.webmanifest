@@ -20,7 +20,7 @@
     "productivity",
     "utilities"
   ],
-  "description": "Asistente bilingüe para preparar trámites en Alemania.",
+  "description": "Asistente bilingüe para preparar trámites en Alemania con OCR, tarjetas y audio procesados localmente.",
   "icons": [
     {
       "src": "icons/icon.svg",
@@ -55,6 +55,14 @@
     {
       "name": "Caso / Fall",
       "url": "./#case"
+    },
+    {
+      "name": "Plazos / Fristen",
+      "url": "./#deadlines"
+    },
+    {
+      "name": "Asesoría / Beratung",
+      "url": "./#advice"
     },
     {
       "name": "Documentos perdidos / Dokumentverlust",

@@ -1,0 +1,72 @@
+{
+  "id": "./",
+  "name": "Puente – Ayuda con trámites",
+  "short_name": "Puente",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "orientation": "portrait-primary",
+  "background_color": "#f4f7fa",
+  "theme_color": "#12385b",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": [
+    "government",
+    "productivity",
+    "utilities"
+  ],
+  "description": "Asistente bilingüe para preparar trámites en Alemania con OCR, tarjetas y audio procesados localmente.",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Asistente / Assistent",
+      "url": "./#assistant"
+    },
+    {
+      "name": "Caso / Fall",
+      "url": "./#case"
+    },
+    {
+      "name": "Plazos / Fristen",
+      "url": "./#deadlines"
+    },
+    {
+      "name": "Asesoría / Beratung",
+      "url": "./#advice"
+    },
+    {
+      "name": "Documentos perdidos / Dokumentverlust",
+      "url": "./#lost"
+    }
+  ]
+}

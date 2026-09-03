@@ -1,83 +1,103 @@
-# Puente – Prototyp v0.4.1
+# Puente – Prototyp v0.7.0
 
-Mobile-first, zweisprachige HTML/PWA für aufsuchende Bürokratiehilfe in spanischsprachigen Communities in Deutschland.
+Mobile-first, zweisprachige PWA für die Vorbereitung deutscher Behördenanträge. Puente arbeitet ohne eigenes Backend und verarbeitet Dokumente, Kartenfotos und Audio möglichst vollständig lokal im Browser.
 
-## Neu in v0.4.1 – Fehlerbehebung und Mobiloptimierung
+## Neu in v0.7.0
 
-### Behobene Fehler
-- **Formularansicht sprengte den Bildschirm.** Lange Feldtitel (z. B. „Aktuelle/beantragte/weggefallene/abgelehnte Transferleistungen") konnten nicht umbrechen; die Seite wurde auf einem 390-px-Gerät 462 px breit und die untere Navigation war nicht mehr antippbar.
-- **Fehlender Übersetzungsschlüssel `navAssistant`** – in der Navigationsleiste stand in beiden Sprachen der Rohschlüssel statt „Assistent“/„Asistente“.
-- **Upload-Fläche zerfiel optisch**, weil das `<label>` ohne `display:block` als Inline-Element gerendert wurde.
-- **Falscherkennung bei der Datenextraktion:** „Nettokaltmiete“ wurde zusätzlich als *Nettoeinkommen* erkannt und hätte die Kaltmiete in das Einkommensfeld übertragen. Label-Vergleich erfolgt jetzt mit Wortgrenze. „beginnt am“ greift nur noch bei Mietverträgen.
-- **Absturzrisiken beim Start** durch ungeprüfte Werte aus `localStorage` (Sprache, Route, verwaiste Dokument-IDs) und unvollständige Session-Objekte.
-- Datei-Inputs werden nach der Auswahl zurückgesetzt – dieselbe Datei kann erneut gewählt werden.
-- Blockierende `alert()`-Dialoge durch nicht-blockierende Hinweise ersetzt.
+### Karten fotografieren → Formularfelder vorbereiten
+Im Fall-Arbeitsbereich gibt es einen eigenen Modus für Bank-/Debit-/Kreditkarten und Gesundheitskarten. Das Foto wird lokal mit Tesseract.js ausgewertet. Erkannte, für Anträge sinnvolle Angaben werden den passenden Formularfeldern zugeordnet, z. B.:
 
-### Mobile Optimierung
-- Alle Eingabefelder mit 16 px Schriftgröße: iOS zoomt beim Fokus nicht mehr hinein.
-- Tippflächen durchgehend mindestens 44 px; Werkzeugleisten auf Telefonen einspaltig.
-- `env(safe-area-inset-*)` für Home-Indicator und Notch, `100dvh` statt `100vh`.
-- Dialoge als scrollbares Bottom-Sheet, schließbar per Tipp auf den Hintergrund.
-- Android-Zurück-Taste navigiert innerhalb der App (History-API) statt sie zu verlassen.
-- Dunkler Modus, sichtbarer Tastaturfokus, Skip-Link, `prefers-reduced-motion`.
-- Querformat mit geringer Höhe: Kopf- und Fußleiste werden nicht fixiert.
+- Vor- und Nachname / Kontoinhaber
+- IBAN und BIC
+- Bankname
+- Krankenkasse und Versichertennummer
+- Geburtsdatum
 
-### Technik
-- OCR-Worker wird wiederverwendet: Sprachpakete laden einmal pro Sitzung statt pro Dokument.
-- Fortschrittsanzeige schreibt höchstens alle 1,5 s in den `sessionStorage`.
-- Service Worker: network-first für Navigationen (Updates erreichen die Geräte), CDN-Antworten werden nicht mehr gecacht.
-- PWA-Manifest mit Icons, Scope und Shortcuts; „Zum Startbildschirm hinzufügen“ funktioniert korrekt.
-- **Deployment vollständig:** PNG-PWA-Icons für 180, 192 und 512 px sowie Maskable-512 sind im Repository enthalten; Manifest und Apple-Touch-Icon zeigen auf vorhandene Dateien.
+**Zahlungskartendaten werden bewusst ausgeschlossen:** PAN/Kartennummer, CVV/CVC und das Gültigkeitsdatum von Debit-/Kreditkarten werden weder als Fakten ausgegeben noch in Formularfelder übernommen. OCR kann Fehler machen; deshalb werden erkannte Werte angezeigt. Hochsichere, bereits einem Formularfeld zugeordnete Karten-/Audioangaben werden bei freien Zielfeldern automatisch **als Entwurf** eingetragen. Zusätzlich gibt es einen Sammelknopf, der Vorschläge mit mindestens 75 % Erkennungssicherheit bestätigt und übernimmt. Vor dem Absenden bleibt eine Sichtprüfung erforderlich.
 
-## Aus v0.4: druckfertige Fallakte
-- Deckblatt, Fallübersicht, Nachweis-Checkliste und Fehlstellenliste
-- bestätigte OCR-Angaben und vorbereitete Formularfelder werden übernommen
-- sortiertes Nachweisverzeichnis mit Nummerierung N1, N2, …
-- lokaler Antragssatz-Export als ZIP: Fallakte + Falldaten + Checkliste + Originalnachweise
-- Hinweisdatei im ZIP, wenn Originaldateien nach einem Reload nicht mehr verfügbar sind
+### Audio lokal mit Whisper
+Audio kann als Datei ausgewählt oder direkt im Browser aufgenommen werden. `whisper.cpp` transkribiert lokal per WebAssembly; danach werden aus dem temporären Transkript u. a. Name, Geburtsdatum, Anschrift, IBAN, Krankenkasse und Versichertennummer extrahiert und den Formularen zugeordnet.
 
-## Aus v0.3: Fall-Arbeitsbereich
-- Kamera/Dateiupload für JPG, PNG, WebP und PDF (max. 25 MB je Datei)
-- Dokumente bleiben im Browser; keine Puente-Cloud
-- clientseitige Dokumenttyp-Erkennung
-- clientseitige PDF-Textauslese mit PDF.js
-- clientseitiges OCR für Bilder und gescannte PDFs mit Tesseract.js
-- automatische Erkennung von Steuer-ID, Renten-/SV-Nummer, IBAN, Krankenkasse, Wohnfläche sowie Miet- und Einkommensbeträgen
-- erkannte Angaben werden als Vorschläge mit Konfidenz angezeigt und erst nach Bestätigung übernommen
-- manuelle Dokumenttyp-Korrektur und manuelle Textanalyse als Offline-Weg
-- Export einer Fallübersicht als JSON ohne Originaldokumente
+- kein Upload der Audioaufnahme an Puente oder einen KI-Dienst
+- Transkript nur im Arbeitsspeicher des geöffneten Tabs
+- lokales Modell: Whisper `tiny-q5_1` (ca. 31 MB)
+- Same-Origin-Auslieferung der Engine und des Modells im GitHub-Pages-Build
+- direkte Aufnahme ist auf 2 Minuten begrenzt; ausgewählte Dateien können länger sein
+
+Die ältere Browser-Spracherkennung in `voice.js` bleibt für das geführte Diktat optional vorhanden und wird weiterhin nur nach ausdrücklicher Einwilligung verwendet. Die neue Audioanalyse benutzt sie **nicht**.
+
+### Keine Laufzeit-CDNs im Deployment
+GitHub Actions lädt die benötigten Open-Source-Abhängigkeiten während des Builds, testet sie, legt die geprüften Dateien unter `vendor/` im Repository ab und veröffentlicht sie anschließend unter demselben Puente-Ursprung:
+
+- QRCode.js 1.0.0
+- Tesseract.js 5.1.1 + Core + Deutsch/Spanisch/Englisch
+- PDF.js 3.11.174
+- JSZip 3.10.1
+- pdf-lib 1.17.1
+- whisper.cpp WebAssembly + `ggml-tiny-q5_1.bin`
+
+Damit funktionieren QR, OCR, PDF, ZIP und Whisper auch in Netzen, in denen öffentliche CDNs am Endgerät gesperrt sind. Die CDN-URLs im Quellcode bleiben ausschließlich als Entwicklungs-Fallback erhalten.
+
+### Whisper auf statischem Hosting
+Der vorhandene Puente-Service-Worker setzt bei Same-Origin-Antworten COOP/COEP-Header. Dadurch kann `SharedArrayBuffer` für die threaded WebAssembly-Version von whisper.cpp auch auf GitHub Pages verwendet werden. Beim ersten Besuch kann dafür einmalig ein automatischer Reload erfolgen.
+
+## Aus v0.6
+
+- drei Speicherstufen: Sitzung, eigenes Gerät, geteiltes Gerät
+- Fallphasen Vorbereiten / Eingereicht / Bescheid
+- Postausgangsbuch
+- Bedarfsgemeinschaft und daraus abgeleitete Anlagen
+- Fallübergabe als Datei bzw. QR-Code
+- Fristen, Bescheidanalyse und Widerspruchshilfe
+- Befüllung amtlicher AcroForm-PDFs
+- Fallakte und Antragssatz-Export
+- Vorlesen sowie optionales, geführtes Browser-Diktat
 
 ## Datenschutzmodell
-- Originaldateien: nur im Arbeitsspeicher des geöffneten Tabs
-- vollständiger OCR-Text: wird nach der Analyse nicht gespeichert
-- erkannte Vorschläge und bestätigte Werte: nur `sessionStorage`
-- Fallklassifikation und reine Dokumentstatus: `localStorage`
+
+- Originalbilder, Dokumente und Audio: nur im Arbeitsspeicher des geöffneten Tabs
+- vollständiger OCR-Text und Whisper-Transkript: nicht persistent gespeichert
+- bestätigte Angaben: je nach Speicherstufe `sessionStorage` oder IndexedDB
+- Sprache, Route, Dokumentstatus und Einstellungen: `localStorage`
 - keine Analytics, kein Tracking, kein Puente-Backend
-- „Fall löschen“ entfernt lokale und sessionbezogene Daten
+- keine Extraktion von PAN/CVV/Gültigkeitsdatum aus Zahlungskarten
+- Gesundheitskartendaten werden ausschließlich lokal verarbeitet und erst nach sichtbarer Prüfung übernommen
 
-Wichtig: Für OCR/PDF-Auslese lädt der Browser bei Bedarf Tesseract.js bzw. PDF.js über öffentliche CDNs. Die Dokumente werden dabei lokal verarbeitet und nicht an die CDNs übertragen. Für vollständig offline arbeitende Installationen sollten diese Bibliotheken lokal mit dem Projekt ausgeliefert werden.
+## Dateien
 
-## Bereits enthalten
-- Spanisch/Deutsch
-- geführter Fall-Assistent
-- Grundsicherungsgeld und Wohngeld
-- automatische Jobcenter-Anlagenlogik
-- formularfeldgenaue Vorbereitung HA/KDU/EK/VM sowie Berliner Mietzuschuss
-- Dokumentverlust-Modus
-- Beschaffungswege nach Komplexität 1–4
-- Musterschreiben
-- Druck/PDF
+```text
+index.html       Grundgerüst, Navigation, frühe SW-/COOP-/COEP-Aktivierung
+storage.js       Speichermodell und Migration
+voice.js         Vorlesen und optionales Browser-Diktat
+capture.js       Kartenextraktion, Aufnahme und lokales Whisper
+data.js         Inhalte, Dokumenttypen und Formularzuordnungen
+features.js      Fristen, Bescheide, PDF, Beratung, QR, Postausgang
+app.js           Zustand, Routing, OCR, Fall- und Formularworkflow
+styles.css       Mobil-, Dunkel- und Druckansicht
+sw.js            Offline-Cache + Cross-Origin-Isolation für lokales Whisper
+vendor/          lokal ausgelieferte Bibliotheken (Build ergänzt große Assets)
+tests/           Integritäts- und Funktionsprüfungen
+```
 
 ## Starten
+
 ```bash
 python -m http.server 8080
 ```
-Dann `http://localhost:8080` öffnen.
 
-Hinweis: Für Kamera, Zwischenablage und Service Worker ist ein sicherer Kontext nötig – also `localhost` oder HTTPS. Über eine reine LAN-IP per HTTP stehen diese Funktionen nicht zur Verfügung.
+Für Kamera, Mikrofon und Service Worker ist ein sicherer Kontext nötig (`localhost` oder HTTPS). Für **lokales Whisper mit mehreren Threads** muss die Seite zusätzlich cross-origin-isolated sein; im GitHub-Pages-Deployment erledigt das `sw.js` automatisch.
 
-## Test
-Der Prototyp wurde auf 390 px und 320 px Viewportbreite sowie in hellem und dunklem Modus automatisiert durchgeklickt: keine Laufzeitfehler, kein horizontaler Überlauf, keine Eingabefelder unter 16 px, keine Tippfläche unter 36 px.
+## Tests
 
-## Grenzen des Prototyps
-OCR und RegEx-Erkennung können Fehler machen. Deshalb werden erkannte persönliche Angaben nicht stillschweigend übernommen, sondern müssen bestätigt werden. Die App ist praktische Orientierung, keine Rechtsberatung.
+```bash
+node --check app.js
+node --check capture.js
+node tests/00-datenintegritaet.js
+node tests/06-capture.js
+```
+
+Der Pages-Workflow führt zusätzlich echte Netzwerk-/Assettests aus: Er lädt den QR-Browserbuild über den vorgesehenen jsDelivr-Pfad, prüft ihn in Headless Chromium, lädt die lokale Whisper-Engine plus Modell und kontrolliert die erwartete WebAssembly-API und die Same-Origin-Bereitstellung.
+
+## Grenzen
+
+OCR und Spracherkennung können falsche Werte erzeugen. Automatische Zuordnung bedeutet daher **nicht** blindes Absenden: Puente zeigt die Vorschläge und verlangt bei Einzelwerten eine Bestätigung bzw. bietet bei sicheren Karten-/Audiofakten eine gebündelte Übernahme mit anschließender Formularprüfung. Fristen bilden Regelfälle ab; maßgeblich bleibt das Originalschreiben. Puente ist praktische Orientierung, keine Rechtsberatung.
