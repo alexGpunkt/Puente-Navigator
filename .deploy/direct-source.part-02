@@ -1,0 +1,278 @@
+-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.evidence-no{width:42px;height:34px;border-radius:10px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800}
+.evidence-facts{font-size:.76rem;color:var(--muted);margin-top:5px;line-height:1.4}
+.appendix-image{max-width:100%;max-height:930px;display:block;margin:12px auto;border:1px solid var(--line);border-radius:8px}
+.dossier-foot{font-size:.7rem;color:var(--muted);margin-top:18px;padding-top:8px;border-top:1px solid var(--line)}
+.print-only{display:none}
+@media(max-width:650px){.dossier-metrics{grid-template-columns:repeat(2,1fr)}.dossier-page{padding:15px}.dossier-title{font-size:1.65rem}.evidence-item{grid-template-columns:42px 1fr}.evidence-item>.badge{grid-column:2}}
+@media print{
+  @page{size:A4;margin:14mm 13mm 14mm 13mm}
+  .topbar,.bottom-nav,.dossier-toolbar{display:none!important}
+  body{background:#fff!important;padding:0!important}
+  .app-shell{max-width:none!important;width:100%!important;padding:0!important}
+  .dossier{max-width:none!important}
+  .dossier-page{border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;padding:0!important;page-break-after:always;min-height:0}
+  .dossier-page:last-child{page-break-after:auto}
+  .dossier-cover{min-height:255mm}
+  .print-only{display:block}
+  .screen-only{display:none!important}
+  .appendix-image{max-height:245mm;page-break-inside:avoid}
+  a{color:#000;text-decoration:none}
+}
+
+
+/* ==========================================================================
+   v0.4.1 — Mobile-Optimierung, Bedienbarkeit, Kontrast
+   Die App wird ueberwiegend unterwegs auf kleinen Android-Geraeten benutzt:
+   grosse Tippflaechen, keine iOS-Zoomfallen, korrekte Safe-Areas.
+   ========================================================================== */
+
+/* --- Grundlagen ---------------------------------------------------------- */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{overflow-x:hidden;-webkit-tap-highlight-color:rgba(18,56,91,.12)}
+button,a,label,select,summary,[role="button"]{touch-action:manipulation}
+p,li,h1,h2,h3,h4,strong,td,th,.card p,.req p,.notice{overflow-wrap:break-word}
+img{max-width:100%;height:auto}
+
+/* Sichtbarer Tastaturfokus – vorher gab es gar keinen. */
+:focus-visible{outline:3px solid var(--brand2);outline-offset:2px;border-radius:10px}
+.skip-link{position:absolute;left:-9999px;top:0;z-index:30;background:var(--brand);color:#fff;
+  padding:12px 16px;border-radius:0 0 12px 0;font-weight:700}
+.skip-link:focus{left:0}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+/* --- Tippflaechen: mindestens 44 px, wie von den Plattformrichtlinien empfohlen --- */
+.chip,.icon-btn,.ghost-btn,.primary-btn,.secondary-btn,.danger-btn{min-height:var(--tap)}
+.status-btn{min-height:var(--tap);padding:8px 12px;font-size:.84rem;flex:1 1 auto;justify-content:center;
+  display:inline-flex;align-items:center;gap:4px}
+.mini-btn{min-height:40px;padding:9px 12px;font-size:.8rem}
+.form-tab{min-height:var(--tap)}
+.option-btn{min-height:var(--tap)}
+.nav-btn{min-height:var(--tap)}
+.doc-type-select{min-height:40px}
+.recovery-link{margin-left:0;flex:1 1 100%}
+
+/* --- Eingabefelder: 16 px verhindert das automatische Hineinzoomen unter iOS --- */
+input,select,textarea{font-size:16px;max-width:100%}
+.session-input,.searchbox,.fact input,.manual-text,.doc-type-select{font-size:16px}
+.session-input,.searchbox,.fact input{min-height:var(--tap)}
+.searchbox{position:sticky;top:calc(var(--topbar-h) + 4px);z-index:6}
+
+/* --- Kopfzeile: darf auf 320 px nicht umbrechen -------------------------- */
+.brand-btn{min-width:0;flex:1 1 auto;min-height:var(--tap)}
+.brand-text{min-width:0;overflow:hidden}
+.brand-btn strong,.brand-btn small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.brand-mark{flex:0 0 auto}
+.top-actions{flex:0 0 auto}
+
+/* --- Untere Navigation --------------------------------------------------- */
+.bottom-nav{padding-left:var(--sal);padding-right:var(--sar);align-items:start}
+.nav-btn{padding-top:9px}
+.nav-btn small{font-size:.66rem;line-height:1.1;text-align:center;max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+.nav-btn.active{position:relative}
+.nav-btn.active::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;
+  border-radius:0 0 4px 4px;background:var(--brand)}
+
+/* --- Dialog: auf kleinen Displays als Bottom-Sheet, Inhalt scrollbar ------ */
+.modal{max-height:calc(100dvh - 32px);overscroll-behavior:contain}
+.modal-card{display:flex;flex-direction:column;max-height:inherit;gap:10px}
+.modal-head{position:sticky;top:0;background:var(--surface);padding-bottom:8px;z-index:1}
+.modal-body{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding-bottom:max(4px,env(safe-area-inset-bottom))}
+
+/* --- Kurze Rueckmeldung statt alert() ------------------------------------ */
+.toast{position:fixed;left:50%;transform:translate(-50%,12px);
+  bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom));z-index:20;
+  background:var(--ink);color:#fff;padding:11px 16px;border-radius:999px;font-size:.86rem;font-weight:600;
+  box-shadow:0 10px 30px rgba(0,0,0,.28);opacity:0;transition:opacity .2s,transform .2s;
+  max-width:min(90vw,420px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* --- Karten und Listen: lange Behoerdenwoerter duerfen nichts sprengen ---- */
+.card,.req,.doc-item,.form-field,.fact,.notice{min-width:0}
+.field-help,.evidence-facts,.case-fact strong,.dossier-table td{overflow-wrap:anywhere}
+.doc-main h3{white-space:normal;overflow-wrap:anywhere}
+.form-tabs{scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
+  overscroll-behavior-x:contain}
+.form-tabs::-webkit-scrollbar{display:none}
+.form-tab{scroll-snap-align:start}
+.upload-zone input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.upload-zone{display:block;position:relative;cursor:pointer}
+.dossier-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* --- Breakpoint: Telefone im Hochformat ---------------------------------- */
+@media (max-width:640px){
+  .grid{grid-template-columns:1fr}
+  .option-grid{grid-template-columns:1fr}
+  .case-fact-grid{grid-template-columns:1fr}
+  .hero{padding:18px;border-radius:20px}
+  .hero h1{font-size:1.4rem}
+  .hero-actions .secondary-btn,.hero-actions .primary-btn{flex:1 1 100%;justify-content:center}
+  .doc-item-head{align-items:flex-start}
+  .upload-zone{padding:16px}
+  .service-head .big-icon{font-size:1.9rem}
+  .service-head h1{font-size:1.25rem}
+  .section-title{margin-top:18px}
+  /* Werkzeugleisten: volle Breite statt gequetschter Reihe */
+  .toolbar>button,.toolbar>a,.case-summary-actions>button,.wizard-actions>button,
+  .dossier-toolbar>button{flex:1 1 100%;text-align:center}
+  .toolbar,.case-summary-actions{gap:8px}
+  .req-actions{gap:8px}
+  .req-actions .status-btn{flex:1 1 0;min-width:88px}
+  .doc-actions>*{flex:1 1 100%}
+  .fact-actions>button{flex:1 1 0}
+  .check-row{grid-template-columns:26px 1fr;row-gap:4px}
+  .check-row>.badge{grid-column:2;justify-self:start}
+  .evidence-item{grid-template-columns:42px 1fr;row-gap:4px}
+  .evidence-item>.badge{grid-column:2;justify-self:start}
+  .dossier-cover{min-height:auto}
+  .cover-status{flex-wrap:wrap;gap:12px}
+  .modal{width:100%;max-width:100%;margin:auto auto 0;border-radius:22px 22px 0 0;
+    max-height:88dvh}
+  .modal-card{padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+  .dossier-toolbar{top:auto;position:static}
+}
+
+/* --- Sehr schmale Geraete (320 px) --------------------------------------- */
+@media (max-width:360px){
+  .brand-btn small{display:none}
+  .nav-btn small{font-size:.6rem}
+  .nav-btn span{font-size:1.05rem}
+  .hero h1{font-size:1.3rem}
+  .dossier-metrics{grid-template-columns:1fr 1fr}
+  .app-shell{padding-left:max(10px,var(--sal));padding-right:max(10px,var(--sar))}
+}
+
+/* --- Querformat mit wenig Hoehe: Kopf- und Fussleiste nicht fixieren ----- */
+@media (max-height:460px) and (orientation:landscape){
+  .topbar{position:static}
+  .searchbox{position:static}
+  .bottom-nav{position:static;height:auto;padding-bottom:8px}
+  body{padding-bottom:16px}
+}
+
+/* --- Dunkler Modus ------------------------------------------------------- */
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0d1620;--surface:#152230;--surface2:#1c2c3c;--ink:#e8eef4;--muted:#9db0c2;
+    --brand:#7fb6e2;--brand2:#9ccbf0;--accent:#1b3247;--ok:#5cc48b;--warn:#e0ac52;--bad:#e88b8b;
+    --line:#2a3d50;--shadow:0 8px 28px rgba(0,0,0,.4)
+  }
+  .topbar{background:rgba(21,34,48,.96)}
+  .bottom-nav{background:rgba(21,34,48,.97)}
+  .brand-mark{background:var(--brand);color:#0d1620}
+  .hero{background:linear-gradient(145deg,#14293b,#1d3f5c)}
+  .hero p{color:#c9dcec}
+  .primary-btn{background:var(--brand);color:#0d1620;border-color:var(--brand)}
+  .secondary-btn{background:var(--accent);border-color:#2c4a63;color:var(--brand2)}
+  .hero .secondary-btn{background:#1d3348}
+  .notice{background:#132534;border-color:#2a4055}
+  .notice.warning{background:#2a2113;border-color:#4d3d1c}
+  .notice.danger{background:#2c1717;border-color:#523030}
+  .card,.req,.progress-box,.question-card,.result-hero,.doc-item,.form-field,.doc-item,
+  .source-list a,.step,.metric,.dossier-page,.case-hero{background:var(--surface)}
+  .case-hero{background:linear-gradient(145deg,#182735,#12202d)}
+  .fact{background:#132030}.fact.approved{background:#13291e;border-color:#2f5c41}
+  .upload-zone{background:#132434;border-color:#3a5570}
+  .session-input,.searchbox,.fact input,.manual-text,.doc-type-select,.mini-btn,
+  .form-tab,.option-btn,.attachment{background:#132030;color:var(--ink)}
+  .badge{background:var(--surface2);color:var(--muted)}
+  .badge.ok{background:#16301f;color:var(--ok)}
+  .badge.warn{background:#33280f;color:var(--warn)}
+  .badge.bad{background:#331a1a;color:var(--bad)}
+  .danger-btn{background:#2a1717;border-color:#4d2b2b;color:var(--bad)}
+  .modal,.modal-head{background:var(--surface);color:var(--ink)}
+  .dossier-table th{background:#16283a}
+  .readiness-ring:after{background:var(--surface)}
+  .toast{background:#e8eef4;color:#0d1620}
+  .missing-box{background:#2a1a1a}.missing-box.unsure{background:#2a2313}
+  .check-mark{background:#1c2c3c}
+  .analysis-bar,.progress-track{background:#22384c}
+  .local-banner{background:#132a1e;border-color:#2c5340}
+  .privacy-session{border-color:#38506a}
+}
+
+/* --- Druck: Ergaenzungen ------------------------------------------------- */
+@media print{
+  .toast,.skip-link{display:none!important}
+  body{padding-bottom:0!important}
+}
+
+
+/* ==========================================================================
+   v0.5 – Fristen, Bescheid, Formularbefüllung, Beratung
+   ========================================================================== */
+
+/* --- Zähler für knappe Fristen in der Navigation -------------------------- */
+.nav-btn.has-badge{position:relative}
+.nav-btn.has-badge::after{content:attr(data-badge);position:absolute;top:4px;left:calc(50% + 6px);
+  min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--bad);color:#fff;
+  font-size:.66rem;font-weight:800;display:grid;place-items:center;line-height:1}
+
+/* --- Fristenliste --------------------------------------------------------- */
+.deadline-list{display:grid;gap:10px}
+.deadline{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--muted);
+  border-radius:16px;padding:13px}
+.deadline.overdue{border-left-color:var(--bad);background:#fff7f7}
+.deadline.urgent{border-left-color:var(--bad)}
+.deadline.soon{border-left-color:var(--warn)}
+.deadline.ok{border-left-color:var(--ok)}
+.deadline.done{opacity:.55;border-left-color:var(--line)}
+.deadline-head{display:flex;gap:11px;align-items:flex-start}
+.deadline-icon{font-size:1.5rem;line-height:1;flex:0 0 auto}
+.deadline-main{flex:1;min-width:0}
+.deadline-main h3{margin:0;font-size:1rem;overflow-wrap:anywhere}
+.deadline-date{color:var(--muted);font-size:.82rem;margin-top:3px}
+.deadline-count{flex:0 0 auto;font-weight:800;font-size:.8rem;text-align:right;max-width:38%}
+.deadline.overdue .deadline-count,.deadline.urgent .deadline-count{color:var(--bad)}
+.deadline.soon .deadline-count{color:var(--warn)}
+.deadline.ok .deadline-count{color:var(--ok)}
+.deadline-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.urgent-banner{border-left:5px solid var(--bad)}
+
+/* --- Bescheid-Auswertung -------------------------------------------------- */
+.notice-panel{border:1px solid #c9dbea;background:#f7fbff;border-radius:14px;padding:12px;margin-top:10px}
+.notice-panel-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+.notice-panel .dossier-table{margin-bottom:9px}
+.deadline-hint{border-left:4px solid var(--brand2);background:var(--surface);border-radius:10px;
+  padding:10px 11px;margin-bottom:9px;font-size:.9rem;line-height:1.4}
+.deadline-hint.warn{border-left-color:var(--warn)}
+
+/* --- Formularbefüllung ---------------------------------------------------- */
+.steps-list{margin:10px 0;padding-left:22px;line-height:1.6;font-size:.9rem;color:var(--ink)}
+.steps-list li{margin-bottom:4px}
+.map-list{display:grid;gap:9px}
+.map-row{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px;
+  display:grid;gap:8px}
+.map-pdf{min-width:0}
+.map-pdf strong{display:block;overflow-wrap:anywhere;font-size:.88rem}
+.map-row .doc-type-select{width:100%}
+.stack-label{display:block;margin:10px 0;font-size:.85rem;font-weight:700;color:var(--ink)}
+.stack-label input,.stack-label select{display:block;width:100%;margin-top:5px;font-weight:400}
+.doc-type-select.block{width:100%}
+.manual-text.tall{min-height:280px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px}
+
+@media (min-width:641px){ .map-row{grid-template-columns:1fr 1fr;align-items:center} }
+
+/* --- Dunkler Modus für die neuen Bereiche --------------------------------- */
+@media (prefers-color-scheme:dark){
+  .deadline,.map-row,.deadline-hint{background:var(--surface)}
+  .deadline.overdue{background:#2a1a1a}
+  .notice-panel{background:#132534;border-color:#2a4055}
+  .steps-list{color:var(--ink)}
+}
+.steps-list a{display:inline-block;padding:7px 2px;min-height:36px;font-weight:700}
+
+/* ==========================================================================
+   v0.5 – Fristen, Bescheidanalyse, Formularbefüllung, Beratung
+   ========================================================================== */
+
+/* --- Fristenliste -------------------------------------------------------- */
+.deadline-list{display:grid;gap:10px}
+.deadline{bac
