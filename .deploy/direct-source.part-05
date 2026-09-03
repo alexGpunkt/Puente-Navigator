@@ -1,0 +1,280 @@
+: { es: "Di el IBAN letra por letra y cifra por cifra", de: "IBAN Buchstabe für Buchstabe und Ziffer für Ziffer sagen" },
+    taxId: { es: "Di los once dígitos", de: "Die elf Ziffern sagen" },
+    area: { es: "Di los metros cuadrados", de: "Quadratmeter sagen" },
+    text: { es: "Habla con calma tras el tono", de: "Nach dem Signal ruhig sprechen" }
+  };
+
+  /* -------------------------------------------------- Zustimmung einholen */
+
+  function askConsent() {
+    return new Promise(resolve => {
+      const modal = document.querySelector("#modal");
+      document.querySelector("#modalTitle").textContent = L("🎤 Activar reconocimiento de voz", "🎤 Spracherkennung einschalten");
+      document.querySelector("#modalBody").innerHTML = `
+        <div class="notice warning"><strong>${L("Antes de activarlo", "Vor dem Einschalten")}:</strong> ${L(
+          "El reconocimiento de voz del navegador suele enviar el audio a servidores del fabricante del navegador. Eso es distinto del resto de Puente, donde nada sale del dispositivo.",
+          "Die Spracherkennung des Browsers überträgt das Audio in der Regel an Server des Browser-Herstellers. Das ist anders als im übrigen Puente, wo nichts das Gerät verlässt.")}</div>
+        <ul class="prep-list">
+          <li>${L("No dictes datos de otras personas sin su consentimiento.", "Keine Daten anderer Personen ohne deren Einverständnis diktieren.")}</li>
+          <li>${L("Leer en voz alta funciona sin activar esto y sin conexión.", "Das Vorlesen funktioniert ohne diese Zustimmung und ohne Verbindung.")}</li>
+          <li>${L("Puedes desactivarlo en cualquier momento en los ajustes.", "Die Zustimmung lässt sich in den Einstellungen jederzeit zurücknehmen.")}</li>
+        </ul>
+        <div class="toolbar">
+          <button type="button" class="primary-btn" id="voiceYes">${L("Activar", "Einschalten")}</button>
+          <button type="button" class="ghost-btn" id="voiceNo">${L("Ahora no", "Jetzt nicht")}</button>
+        </div>`;
+      modal.showModal();
+      document.querySelector("#voiceYes").addEventListener("click", () => { setListenConsent(true); modal.close(); resolve(true); });
+      document.querySelector("#voiceNo").addEventListener("click", () => { modal.close(); resolve(false); });
+    });
+  }
+
+  /* ------------------------------------------ Geführtes Diktat für ein Feld */
+
+  /**
+   * Fragt genau einen Wert ab und legt das Ergebnis zur Bestätigung vor.
+   * @returns {Promise<string|null>} bestätigter Wert oder null
+   */
+  async function dictateField({ question, kind = "text" }) {
+    if (!canListen()) { ctx.toast(L("Este navegador no reconoce voz.", "Dieser Browser erkennt keine Sprache.")); return null; }
+    if (!listenConsent() && !(await askConsent())) return null;
+
+    const modal = document.querySelector("#modal");
+    document.querySelector("#modalTitle").textContent = "🎤 " + L("Dictado", "Diktat");
+    document.querySelector("#modalBody").innerHTML = `
+      <div class="dictate">
+        <p class="dictate-q">${ctx.esc(question)}</p>
+        <p class="small">${ctx.esc(KIND_HINT[kind] ? (ctx.lang() === "es" ? KIND_HINT[kind].es : KIND_HINT[kind].de) : "")}</p>
+        <div class="dictate-live" id="dictateLive" aria-live="polite">…</div>
+        <label class="field-label" for="dictateValue">${L("Valor reconocido, corregible", "Erkannter Wert, korrigierbar")}</label>
+        <input id="dictateValue" class="full-input" value="">
+        <div class="toolbar">
+          <button type="button" class="primary-btn" id="dictateOk" disabled>${L("Aceptar valor", "Wert übernehmen")}</button>
+          <button type="button" class="secondary-btn" id="dictateAgain">${L("Repetir", "Nochmal")}</button>
+          <button type="button" class="ghost-btn" id="dictateCancel">${L("Cancelar", "Abbrechen")}</button>
+        </div>
+      </div>`;
+    modal.showModal();
+
+    const live = document.querySelector("#dictateLive");
+    const input = document.querySelector("#dictateValue");
+    const ok = document.querySelector("#dictateOk");
+
+    const run = async () => {
+      live.textContent = L("Escuchando…", "Höre zu…");
+      ok.disabled = true;
+      try {
+        const raw = await recognizeOnce({ kind, onPartial: t => { live.textContent = t || "…"; } });
+        const parsed = parseByKind(kind, raw);
+        live.textContent = raw || L("Nada reconocido", "Nichts erkannt");
+        input.value = parsed || raw || "";
+        ok.disabled = !input.value.trim();
+        if (raw && !parsed && kind !== "text") {
+          live.textContent += " · " + L("formato no reconocido, corrígelo a mano", "Format nicht erkannt, bitte von Hand korrigieren");
+        }
+      } catch (err) {
+        live.textContent = L("No se pudo escuchar: ", "Zuhören nicht möglich: ") + (err.message || err);
+        ok.disabled = !input.value.trim();
+      }
+    };
+
+    input.addEventListener("input", () => { ok.disabled = !input.value.trim(); });
+    document.querySelector("#dictateAgain").addEventListener("click", run);
+    run();
+
+    return new Promise(resolve => {
+      document.querySelector("#dictateOk").addEventListener("click", () => { const v = input.value.trim(); modal.close(); resolve(v || null); });
+      document.querySelector("#dictateCancel").addEventListener("click", () => { modal.close(); resolve(null); });
+    });
+  }
+
+  /* ------------------------------------------------- Gesprächsnotiz */
+
+  async function dictateNote() {
+    if (!canListen()) { ctx.toast(L("Este navegador no reconoce voz.", "Dieser Browser erkennt keine Sprache.")); return null; }
+    if (!listenConsent() && !(await askConsent())) return null;
+
+    const modal = document.querySelector("#modal");
+    document.querySelector("#modalTitle").textContent = "🎤 " + L("Nota tras la cita", "Notiz nach dem Termin");
+    document.querySelector("#modalBody").innerHTML = `
+      <div class="notice">${L(
+        "Cuenta con tus palabras qué se ha acordado: quién, qué documento, para cuándo. La nota se guarda en el expediente; los plazos solo se proponen.",
+        "Mit eigenen Worten erzählen, was vereinbart wurde: wer, welches Dokument, bis wann. Die Notiz landet in der Fallakte; Fristen werden nur vorgeschlagen.")}</div>
+      <div class="dictate-live" id="noteLive" aria-live="polite">…</div>
+      <label class="field-label" for="noteText">${L("Texto", "Text")}</label>
+      <textarea id="noteText" class="manual-text" rows="7"></textarea>
+      <div class="toolbar">
+        <button type="button" class="primary-btn" id="noteRec">🎤 ${L("Grabar", "Aufnehmen")}</button>
+        <button type="button" class="secondary-btn" id="noteStop" disabled>⏹ ${L("Parar", "Stopp")}</button>
+        <button type="button" class="primary-btn" id="noteSave">${L("Guardar en el expediente", "In der Fallakte sichern")}</button>
+      </div>`;
+    modal.showModal();
+
+    const live = document.querySelector("#noteLive");
+    const area = document.querySelector("#noteText");
+    let active = null;
+
+    document.querySelector("#noteRec").addEventListener("click", async () => {
+      document.querySelector("#noteStop").disabled = false;
+      live.textContent = L("Escuchando…", "Höre zu…");
+      try {
+        const text = await recognizeOnce({
+          continuous: true, timeoutMs: 120000,
+          onStart: rec => { active = rec; },
+          onPartial: t => { live.textContent = t.slice(-160); }
+        });
+        area.value = (area.value ? area.value + "\n" : "") + text;
+      } catch (err) {
+        live.textContent = L("Error: ", "Fehler: ") + (err.message || err);
+      } finally {
+        active = null;
+        document.querySelector("#noteStop").disabled = true;
+      }
+    });
+    document.querySelector("#noteStop").addEventListener("click", () => { try { active && active.stop(); } catch (_) {} });
+
+    return new Promise(resolve => {
+      document.querySelector("#noteSave").addEventListener("click", () => {
+        const text = area.value.trim();
+        modal.close();
+        resolve(text || null);
+      });
+    });
+  }
+
+  return {
+    canSpeak, canListen, listenConsent, setListenConsent,
+    speak, stopSpeaking, isSpeaking, readCurrentView,
+    dictateField, dictateNote, parseByKind, askConsent
+  };
+};
+__PUENTE_FILE_05_EOF__
+cat > capture.js <<'__PUENTE_FILE_06_EOF__'
+/* Puente v0.7 – lokale Karten- und Audioerfassung
+   - Kartenfotos werden ausschließlich lokal per OCR ausgewertet.
+   - Zahlungsdaten, die für Behördenformulare nicht benötigt werden (PAN/CVV),
+     werden bewusst weder extrahiert noch gespeichert.
+   - Audio wird über whisper.cpp/WASM lokal transkribiert. Das Modell und die
+     Engine werden beim Pages-Build als Same-Origin-Dateien unter vendor/whisper
+     bereitgestellt; zur Laufzeit ist kein externer KI-Dienst nötig. */
+(function (root) {
+  "use strict";
+
+  const SAFE_CARD_FACTS = new Set([
+    "firstName","lastName","accountHolder","iban","bic","bankName",
+    "healthFund","healthInsuranceNo","birthDate"
+  ]);
+
+  const FUNDS = [
+    "AOK Nordost","AOK Bayern","AOK Baden-Württemberg","AOK Niedersachsen","AOK Rheinland/Hamburg",
+    "AOK PLUS","AOK Rheinland-Pfalz/Saarland","AOK Sachsen-Anhalt","AOK Bremen/Bremerhaven",
+    "Techniker Krankenkasse","TK","BARMER","DAK-Gesundheit","DAK","KKH","hkk","IKK classic",
+    "HEK","SBK","mkk","BKK VBU","Mobil Krankenkasse","BIG direkt gesund"
+  ];
+  const BANK_WORDS = /(bank|sparkasse|volksbank|raiffeisen|commerzbank|deutsche bank|n26|dkb|ing|postbank|santander|revolut|visa|mastercard|girocard|debit|credit)/i;
+  const CARD_NO_WORDS = /(kartennummer|card number|karten-nr|pan|cvc|cvv|prüfnummer|security code|valid thru|gültig bis)/i;
+
+  function cleanText(v) {
+    return String(v || "").replace(/\u00ad/g, "").replace(/[\t\r]+/g, " ").replace(/[ ]{2,}/g, " ").trim();
+  }
+  function linesOf(text) {
+    return String(text || "").split(/\n+/).map(cleanText).filter(Boolean);
+  }
+  function ibanChecksumOk(iban) {
+    if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(iban)) return false;
+    const rearranged = iban.slice(4) + iban.slice(0,4);
+    let rem = 0;
+    for (const ch of rearranged) {
+      const part = ch >= "A" && ch <= "Z" ? String(ch.charCodeAt(0)-55) : ch;
+      for (const d of part) rem = (rem * 10 + Number(d)) % 97;
+    }
+    return rem === 1;
+  }
+  function normalizeIban(raw) {
+    const src = String(raw || "").toUpperCase();
+    const starts = [...src.matchAll(/\b[A-Z]{2}\s*\d{2}/g)];
+    for (const m of starts) {
+      const segment = src.slice(m.index).split(/[\n;,.!?]/)[0];
+      const compact = segment.replace(/[^A-Z0-9]/g, "");
+      for (let len = 15; len <= Math.min(34, compact.length); len++) {
+        const candidate = compact.slice(0, len);
+        if (ibanChecksumOk(candidate)) return candidate;
+      }
+    }
+    return null;
+  }
+  function normalizeBic(raw) {
+    const s = String(raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const m = s.match(/[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?/);
+    return m && m[0].length >= 8 && m[0].length <= 11 ? m[0] : null;
+  }
+  function titleCaseName(s) {
+    return cleanText(s).toLowerCase().replace(/(^|[\s'-])([a-zäöüáéíóúñ])/g, (_, a, b) => a + b.toUpperCase());
+  }
+  function validPersonName(s) {
+    const v = cleanText(s).replace(/[|_:]/g, " ").replace(/\s+/g, " ");
+    if (v.length < 2 || v.length > 70 || /\d/.test(v) || CARD_NO_WORDS.test(v) || BANK_WORDS.test(v)) return null;
+    const words = v.split(" ").filter(Boolean);
+    if (words.length > 6) return null;
+    if (!words.every(w => /^[A-Za-zÄÖÜäöüßÁÉÍÓÚÑáéíóúñ.'-]{2,}$/.test(w))) return null;
+    return titleCaseName(v);
+  }
+  function labeledValue(text, labels, valuePattern) {
+    const raw = String(text || "");
+    for (const label of labels) {
+      const re = new RegExp(label + "\\s*[:#-]?\\s*([^\\n]{1,80})", "i");
+      const m = raw.match(re);
+      if (!m) continue;
+      const v = cleanText(m[1]);
+      if (!valuePattern || valuePattern.test(v)) return v;
+    }
+    return null;
+  }
+  function pushFact(out, key, value, confidence, sourceKind) {
+    value = cleanText(value);
+    if (!value || !SAFE_CARD_FACTS.has(key) || out.some(x => x.key === key && x.value === value)) return;
+    out.push({ key, value, confidence: Math.max(0.1, Math.min(0.99, confidence || 0.7)), sourceKind: sourceKind || "card" });
+  }
+
+  function classifyCardText(text) {
+    const t = cleanText(text).toLowerCase();
+    const fund = FUNDS.find(x => t.includes(x.toLowerCase()));
+    const healthScore = (fund ? 4 : 0) + (/versichertennummer|gesundheitskarte|krankenversicherung|health insurance/.test(t) ? 3 : 0) + (/egk|g2/.test(t) ? 1 : 0);
+    const bankScore = (BANK_WORDS.test(t) ? 3 : 0) + (/\biban\b|\bbic\b/.test(t) ? 3 : 0) + (/cardholder|karteninhaber|kontoinhaber/.test(t) ? 1 : 0);
+    if (healthScore >= Math.max(3, bankScore)) return { kind: "health_card", confidence: Math.min(.98, .45 + healthScore * .08) };
+    if (bankScore >= 3) return { kind: "bank_card", confidence: Math.min(.96, .42 + bankScore * .08) };
+    return { kind: "card", confidence: .35 };
+  }
+
+  function extractCardFacts(text, forcedKind) {
+    const raw = String(text || "");
+    const lines = linesOf(raw);
+    const cls = forcedKind && forcedKind !== "card" ? { kind: forcedKind, confidence: .9 } : classifyCardText(raw);
+    const out = [];
+
+    const ibanRaw = labeledValue(raw, ["IBAN"], /[A-Z0-9 ]{15,}/i) || raw.match(/\b[A-Z]{2}\s*\d{2}(?:\s*[A-Z0-9]){11,30}\b/i)?.[0];
+    const iban = normalizeIban(ibanRaw);
+    if (iban) pushFact(out, "iban", iban, .97, cls.kind);
+
+    const bicRaw = labeledValue(raw, ["BIC", "SWIFT"], /[A-Z0-9]{8,14}/i);
+    const bic = normalizeBic(bicRaw);
+    if (bic) pushFact(out, "bic", bic, .9, cls.kind);
+
+    const fund = FUNDS.find(x => raw.toLowerCase().includes(x.toLowerCase()));
+    if (fund) pushFact(out, "healthFund", fund, .96, cls.kind);
+
+    const healthNo = labeledValue(raw, ["Versichertennummer", "Vers.-Nr\\.?", "Versicherungsnummer", "Insurance no\\.?"], /[A-Z][0-9]{9}/i)
+      || raw.match(/\b[A-Z][0-9]{9}\b/i)?.[0];
+    if (healthNo) pushFact(out, "healthInsuranceNo", healthNo.toUpperCase().replace(/\s/g, ""), .92, cls.kind);
+
+    const first = labeledValue(raw, ["Vorname", "Given name", "Nombre"], /[A-Za-zÄÖÜäöüßÁÉÍÓÚÑáéíóúñ '-]{2,}/i);
+    const last = labeledValue(raw, ["Nachname", "Familienname", "Surname", "Apellido(?:s)?"], /[A-Za-zÄÖÜäöüßÁÉÍÓÚÑáéíóúñ '-]{2,}/i);
+    const vf = validPersonName(first), vl = validPersonName(last);
+    if (vf) pushFact(out, "firstName", vf, .88, cls.kind);
+    if (vl) pushFact(out, "lastName", vl, .88, cls.kind);
+
+    const holder = labeledValue(raw, ["Kontoinhaber(?:/in)?", "Karteninhaber(?:/in)?", "Cardholder", "Titular"], /[A-Za-zÄÖÜäöüßÁÉÍÓÚÑáéíóúñ '.-]{3,}/i);
+    const vh = validPersonName(holder);
+    if (vh) pushFact(out, "accountHolder", vh, .9, cls.kind);
+
+    if (!vh && cls.kind === "bank_card"
