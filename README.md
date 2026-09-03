@@ -27,6 +27,7 @@ Mobile-first, zweisprachige HTML/PWA für aufsuchende Bürokratiehilfe in spanis
 - Fortschrittsanzeige schreibt höchstens alle 1,5 s in den `sessionStorage`.
 - Service Worker: network-first für Navigationen (Updates erreichen die Geräte), CDN-Antworten werden nicht mehr gecacht.
 - PWA-Manifest mit Icons, Scope und Shortcuts; „Zum Startbildschirm hinzufügen“ funktioniert korrekt.
+- **Deployment vollständig:** PNG-PWA-Icons für 180, 192 und 512 px sowie Maskable-512 sind im Repository enthalten; Manifest und Apple-Touch-Icon zeigen auf vorhandene Dateien.
 
 ## Aus v0.4: druckfertige Fallakte
 - Deckblatt, Fallübersicht, Nachweis-Checkliste und Fehlstellenliste
