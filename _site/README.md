@@ -101,3 +101,7 @@ Der Pages-Workflow führt zusätzlich echte Netzwerk-/Assettests aus: Er lädt d
 ## Grenzen
 
 OCR und Spracherkennung können falsche Werte erzeugen. Automatische Zuordnung bedeutet daher **nicht** blindes Absenden: Puente zeigt die Vorschläge und verlangt bei Einzelwerten eine Bestätigung bzw. bietet bei sicheren Karten-/Audiofakten eine gebündelte Übernahme mit anschließender Formularprüfung. Fristen bilden Regelfälle ab; maßgeblich bleibt das Originalschreiben. Puente ist praktische Orientierung, keine Rechtsberatung.
+
+## Deployment
+
+Der produktive Stand wird über GitHub Actions aus `main` getestet und anschließend über GitHub Pages veröffentlicht.
