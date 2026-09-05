@@ -1,0 +1,578 @@
+      desc:{es:"Para Wohngeld suelen pedirse copias de las personas que viven en la vivienda.",de:"Für Wohngeld werden typischerweise Ausweiskopien der in der Wohnung lebenden Personen verlangt."},
+      recovery:[
+        {level:1,es:"Haz una lista de todas las personas que viven realmente en la vivienda y comprueba sus documentos.",de:"Alle tatsächlich in der Wohnung lebenden Personen auflisten und Ausweisdokumente prüfen."},
+        {level:2,es:"Si falta un documento, usa la ruta 'Documento de identidad' de esta aplicación.",de:"Fehlt ein Dokument, den Beschaffungsweg 'Ausweisdokument' in dieser App verwenden."}
+      ]
+    },
+    rent_payments:{
+      icon:"🧾",title:{es:"Prueba de pagos de alquiler",de:"Nachweis der Mietzahlungen"},
+      desc:{es:"Para Wohngeld se piden habitualmente pagos de los últimos 3 meses, por ejemplo extractos o recibos.",de:"Für Wohngeld werden typischerweise Mietzahlungen der letzten 3 Monate nachgewiesen, z. B. durch Kontoauszüge oder Quittungen."},
+      recovery:[
+        {level:1,es:"Filtra en Onlinebanking por el nombre del propietario/Hausverwaltung y guarda los pagos de los últimos 3 meses.",de:"Im Onlinebanking nach Vermieter/Hausverwaltung filtern und Mietzahlungen der letzten 3 Monate sichern."},
+        {level:2,es:"Si pagas en efectivo, busca o pide recibos (Quittungen).",de:"Bei Barzahlung vorhandene Quittungen suchen bzw. anfordern."}
+      ]
+    },
+    income_all_household:{
+      icon:"👨‍👩‍👧‍👦",title:{es:"Ingresos de todos los miembros del hogar",de:"Einkommen aller Haushaltsmitglieder"},
+      desc:{es:"Nóminas, pensiones, prestaciones y otros ingresos de todas las personas relevantes para Wohngeld.",de:"Lohn, Rente, Leistungen und weitere Einkommen aller für Wohngeld relevanten Haushaltsmitglieder."},
+      recovery:[
+        {level:1,es:"Haz una lista por persona y por tipo de ingreso. Comprueba Bescheide y nóminas.",de:"Pro Person und Einkommensart eine Liste erstellen; Bescheide und Lohnabrechnungen prüfen."},
+        {level:2,es:"Pide copias a empleadores y organismos pagadores.",de:"Kopien bei Arbeitgebern und Leistungsträgern anfordern."}
+      ]
+    },
+    transfer_benefits:{
+      icon:"🏛️",title:{es:"Bescheide de otras prestaciones",de:"Bescheide über Transferleistungen"},
+      desc:{es:"Por ejemplo Arbeitslosengeld, Grundsicherungsgeld, Sozialhilfe o Unterhaltsvorschuss.",de:"Zum Beispiel Arbeitslosengeld, Grundsicherungsgeld, Sozialhilfe oder Unterhaltsvorschuss."},
+      recovery:[
+        {level:1,es:"Busca los Bescheide actuales de todas las personas del hogar.",de:"Aktuelle Bescheide aller Haushaltsmitglieder suchen."},
+        {level:2,es:"Pide un duplicado al organismo competente.",de:"Ersatzbescheid beim zuständigen Leistungsträger anfordern."},
+        {level:4,es:"Si alguien recibe una prestación que ya incluye costes de vivienda, no concluyas automáticamente que Wohngeld procede: comprueba la exclusión con la Wohngeldbehörde.",de:"Wenn jemand eine Leistung bezieht, die Unterkunftskosten bereits berücksichtigt, Wohngeld nicht automatisch annehmen; Ausschluss bei der Wohngeldbehörde prüfen."}
+      ]
+    },
+    special_deductions:{
+      icon:"➖",title:{es:"Deducciones y situaciones especiales",de:"Absetzungen und besondere Merkmale"},
+      desc:{es:"Por ejemplo Werbungskosten, Schwerbehinderung, Pflegegrad o Grundrentenzeiten.",de:"Zum Beispiel Werbungskosten, Schwerbehinderung, Pflegegrad oder Grundrentenzeiten."},
+      recovery:[
+        {level:1,es:"Comprueba si alguna persona del hogar tiene gastos profesionales relevantes, discapacidad, Pflegegrad o Grundrentenzeiten.",de:"Prüfen, ob Haushaltsmitglieder relevante Werbungskosten, Schwerbehinderung, Pflegegrad oder Grundrentenzeiten haben."},
+        {level:2,es:"Reúne los Bescheide o comprobantes correspondientes.",de:"Entsprechende Bescheide/Nachweise zusammentragen."}
+      ]
+    }
+  },
+
+  lostPriority:["id_document","registration","tax_id","social_insurance","health_insurance","iban","bank_statements","rental_contract","income_proof","previous_benefits"],
+
+  sources:[
+    {label:{es:"Bundesagentur für Arbeit · Solicitud y justificantes de Grundsicherungsgeld",de:"Bundesagentur für Arbeit · Antrag und Nachweise Grundsicherungsgeld"},url:"https://www.arbeitsagentur.de/grundsicherung/finanziell-absichern/antrag-bescheid"},
+    {label:{es:"Bundesagentur für Arbeit · Formularios",de:"Bundesagentur für Arbeit · Formulare"},url:"https://www.arbeitsagentur.de/arbeitslos-arbeit-finden/downloads-arbeitslos-arbeit-finden"},
+    {label:{es:"Berlin Service · Wohngeld Mietzuschuss (referencia municipal)",de:"Service Berlin · Wohngeld Mietzuschuss (kommunales Beispiel)"},url:"https://service.berlin.de/dienstleistung/120656/"},
+    {label:{es:"Bundeszentralamt für Steuern · Nueva comunicación de Steuer-ID",de:"Bundeszentralamt für Steuern · Erneute Mitteilung Steuer-ID"},url:"https://www.elster.de/bportal/formulare-leistungen/alleformulare/idnr?locale=de_DE"},
+    {label:{es:"Deutsche Rentenversicherung · Versicherungsnummernachweis",de:"Deutsche Rentenversicherung · Versicherungsnummernachweis"},url:"https://www.deutsche-rentenversicherung.de/DRV/DE/Rente/Allgemeine-Informationen/Sozialversicherungsausweis/Sozialversicherungsausweis.html"}
+  ]
+};
+
+
+APP_DATA.assistantQuestions = [
+  {
+    "id": "target",
+    "type": "single",
+    "title": {
+      "es": "¿Qué quieres aclarar o solicitar?",
+      "de": "Was soll geklärt oder beantragt werden?"
+    },
+    "help": {
+      "es": "Si no lo sabes, el asistente propone un siguiente paso sin decidir jurídicamente el derecho.",
+      "de": "Wenn du es nicht weißt, schlägt der Assistent einen nächsten Schritt vor, ohne einen Rechtsanspruch zu entscheiden."
+    },
+    "options": [
+      {
+        "value": "unknown",
+        "label": {
+          "es": "No lo sé todavía",
+          "de": "Noch unklar"
+        },
+        "desc": {
+          "es": "Comparar las dos rutas",
+          "de": "Beide Wege vergleichen"
+        }
+      },
+      {
+        "value": "grundsicherung",
+        "label": {
+          "es": "Grundsicherungsgeld",
+          "de": "Grundsicherungsgeld"
+        },
+        "desc": {
+          "es": "Jobcenter · antes Bürgergeld",
+          "de": "Jobcenter · vormals Bürgergeld"
+        }
+      },
+      {
+        "value": "wohngeld",
+        "label": {
+          "es": "Wohngeld",
+          "de": "Wohngeld"
+        },
+        "desc": {
+          "es": "Ayuda con los gastos de vivienda",
+          "de": "Zuschuss zu Wohnkosten"
+        }
+      }
+    ]
+  },
+  {
+    "id": "housing",
+    "type": "single",
+    "title": {
+      "es": "¿Cómo vive la persona actualmente?",
+      "de": "Wie wohnt die Person aktuell?"
+    },
+    "help": {
+      "es": "Esto decide qué datos de vivienda son relevantes.",
+      "de": "Davon hängt ab, welche Wohnkostenangaben relevant sind."
+    },
+    "options": [
+      {
+        "value": "rent",
+        "label": {
+          "es": "Alquiler / subalquiler",
+          "de": "Miete / Untermiete"
+        }
+      },
+      {
+        "value": "owner",
+        "label": {
+          "es": "Vivienda propia",
+          "de": "Wohneigentum"
+        }
+      },
+      {
+        "value": "temporary",
+        "label": {
+          "es": "Alojamiento temporal / sin vivienda fija",
+          "de": "Unterkunft / kein fester Wohnsitz"
+        }
+      }
+    ]
+  },
+  {
+    "id": "household",
+    "type": "multi",
+    "title": {
+      "es": "¿Con quién vive?",
+      "de": "Mit wem lebt die Person zusammen?"
+    },
+    "help": {
+      "es": "Marca todas las opciones aplicables. 'Solo/a' borra las demás.",
+      "de": "Alle zutreffenden Optionen wählen. 'Allein' schließt die anderen aus."
+    },
+    "exclusive": [
+      "alone"
+    ],
+    "options": [
+      {
+        "value": "alone",
+        "label": {
+          "es": "Solo/a",
+          "de": "Allein"
+        }
+      },
+      {
+        "value": "partner",
+        "label": {
+          "es": "Pareja / cónyuge",
+          "de": "Partner/in / Ehegatte"
+        }
+      },
+      {
+        "value": "child_u15",
+        "label": {
+          "es": "Niño/a menor de 15",
+          "de": "Kind unter 15"
+        }
+      },
+      {
+        "value": "child_15_24",
+        "label": {
+          "es": "Hijo/a 15–24, soltero/a",
+          "de": "Unverheiratetes Kind 15–24"
+        }
+      },
+      {
+        "value": "relatives",
+        "label": {
+          "es": "Otros familiares",
+          "de": "Andere Verwandte"
+        }
+      },
+      {
+        "value": "wg",
+        "label": {
+          "es": "WG / personas no familiares",
+          "de": "WG / nicht verwandte Personen"
+        }
+      }
+    ]
+  },
+  {
+    "id": "citizenship",
+    "type": "single",
+    "title": {
+      "es": "¿Qué situación de nacionalidad tiene?",
+      "de": "Welche Staatsangehörigkeitssituation liegt vor?"
+    },
+    "help": {
+      "es": "La lengua española no significa automáticamente ciudadanía española o de la UE.",
+      "de": "Spanische Sprache bedeutet nicht automatisch spanische oder EU-Staatsangehörigkeit."
+    },
+    "options": [
+      {
+        "value": "german",
+        "label": {
+          "es": "Alemana",
+          "de": "Deutsch"
+        }
+      },
+      {
+        "value": "eu",
+        "label": {
+          "es": "UE/EEE/Suiza",
+          "de": "EU/EWR/Schweiz"
+        }
+      },
+      {
+        "value": "non_eu",
+        "label": {
+          "es": "Tercer país / no UE",
+          "de": "Drittstaat / nicht EU"
+        }
+      },
+      {
+        "value": "unknown",
+        "label": {
+          "es": "No está claro",
+          "de": "Unklar"
+        }
+      }
+    ]
+  },
+  {
+    "id": "workability",
+    "type": "single",
+    "title": {
+      "es": "¿Puede trabajar normalmente al menos 3 horas al día?",
+      "de": "Kann die Person grundsätzlich mindestens 3 Stunden täglich arbeiten?"
+    },
+    "help": {
+      "es": "Esta pregunta es importante para la ruta del Jobcenter. No sustituye una valoración médica.",
+      "de": "Diese Frage ist für den Jobcenter-Weg wichtig und ersetzt keine medizinische Beurteilung."
+    },
+    "options": [
+      {
+        "value": "yes",
+        "label": {
+          "es": "Sí",
+          "de": "Ja"
+        }
+      },
+      {
+        "value": "no",
+        "label": {
+          "es": "No",
+          "de": "Nein"
+        }
+      },
+      {
+        "value": "unknown",
+        "label": {
+          "es": "No está claro",
+          "de": "Unklar"
+        }
+      }
+    ]
+  },
+  {
+    "id": "income",
+    "type": "multi",
+    "title": {
+      "es": "¿Qué ingresos existen actualmente?",
+      "de": "Welche aktuellen Einnahmen gibt es?"
+    },
+    "help": {
+      "es": "Marca todas las opciones. 'Ninguno' borra las demás.",
+      "de": "Alle zutreffenden Optionen wählen. 'Keine' schließt die anderen aus."
+    },
+    "exclusive": [
+      "none"
+    ],
+    "options": [
+      {
+        "value": "employment",
+        "label": {
+          "es": "Salario / Minijob",
+          "de": "Arbeitslohn / Minijob"
+        }
+      },
+      {
+        "value": "self_employed",
+        "label": {
+          "es": "Trabajo autónomo",
+          "de": "Selbständig / freiberuflich"
+        }
+      },
+      {
+        "value": "alg1",
+        "label": {
+          "es": "Arbeitslosengeld I",
+          "de": "Arbeitslosengeld I"
+        }
+      },
+      {
+        "value": "pension",
+        "label": {
+          "es": "Pensión / Rente",
+          "de": "Rente / Pension"
+        }
+      },
+      {
+        "value": "other",
+        "label": {
+          "es": "Otros ingresos",
+          "de": "Andere Einnahmen"
+        }
+      },
+      {
+        "value": "none",
+        "label": {
+          "es": "Ningún ingreso",
+          "de": "Keine Einnahmen"
+        }
+      }
+    ]
+  },
+  {
+    "id": "housing_transfer",
+    "type": "single",
+    "title": {
+      "es": "¿Recibe ya una prestación que incluye los gastos de vivienda?",
+      "de": "Wird bereits eine Leistung bezogen, die Unterkunftskosten berücksichtigt?"
+    },
+    "help": {
+      "es": "Esto es especialmente importante antes de recomendar Wohngeld.",
+      "de": "Das ist besonders wichtig, bevor Wohngeld empfohlen wird."
+    },
+    "options": [
+      {
+        "value": "no",
+        "label": {
+          "es": "No",
+          "de": "Nein"
+        }
+      },
+      {
+        "value": "sgb2",
+        "label": {
+          "es": "Grundsicherungsgeld / Bürgergeld",
+          "de": "Grundsicherungsgeld / Bürgergeld"
+        }
+      },
+      {
+        "value": "sgb12",
+        "label": {
+          "es": "Sozialhilfe / Grundsicherung SGB XII",
+          "de": "Sozialhilfe / Grundsicherung SGB XII"
+        }
+      },
+      {
+        "value": "asyl",
+        "label": {
+          "es": "Asylbewerberleistungen",
+          "de": "Asylbewerberleistungen"
+        }
+      },
+      {
+        "value": "unknown",
+        "label": {
+          "es": "No está claro",
+          "de": "Unklar"
+        }
+      }
+    ]
+  },
+  {
+    "id": "education",
+    "type": "single",
+    "title": {
+      "es": "¿Estudia o está en formación profesional?",
+      "de": "Schule, Studium oder Ausbildung?"
+    },
+    "help": {
+      "es": "BAföG/BAB puede afectar especialmente a Wohngeld y Grundsicherungsgeld.",
+      "de": "BAföG/BAB kann insbesondere Wohngeld und Grundsicherungsgeld beeinflussen."
+    },
+    "options": [
+      {
+        "value": "none",
+        "label": {
+          "es": "No",
+          "de": "Nein"
+        }
+      },
+      {
+        "value": "student",
+        "label": {
+          "es": "Escuela / universidad",
+          "de": "Schule / Studium"
+        }
+      },
+      {
+        "value": "training",
+        "label": {
+          "es": "Ausbildung",
+          "de": "Ausbildung"
+        }
+      },
+      {
+        "value": "unknown",
+        "label": {
+          "es": "No está claro",
+          "de": "Unklar"
+        }
+      }
+    ]
+  },
+  {
+    "id": "special",
+    "type": "multi",
+    "title": {
+      "es": "¿Hay alguna situación especial?",
+      "de": "Gibt es eine besondere Lebenssituation?"
+    },
+    "help": {
+      "es": "Estas respuestas activan anexos o comprobantes adicionales.",
+      "de": "Diese Antworten aktivieren zusätzliche Anlagen oder Nachweise."
+    },
+    "options": [
+      {
+        "value": "separated",
+        "label": {
+          "es": "Separado/a o divorciado/a",
+          "de": "Getrennt / geschieden"
+         }
+      },
+      {
+        "value": "pregnant",
+        "label": {
+          "es": "Embarazo",
+          "de": "Schwangerschaft"
+        }
+      },
+      {
+        "value": "single_parent",
+        "label": {
+          "es": "Familia monoparental",
+          "de": "Alleinerziehend"
+        }
+      },
+      {
+        "value": "special_diet",
+        "label": {
+          "es": "Dieta médica costosa",
+          "de": "Kostenaufwändige Ernährung"
+        }
+      },
+      {
+        "value": "disability",
+        "label": {
+          "es": "Discapacidad / Pflegegrad",
+          "de": "Behinderung / Pflegegrad"
+        }
+      },
+      {
+        "value": "special_need",
+        "label": {
+          "es": "Necesidad especial inevitable",
+          "de": "Unabweisbarer besonderer Bedarf"
+        }
+      },
+      {
+        "value": "institution",
+        "label": {
+          "es": "Hospital / institución / prisión",
+          "de": "Stationäre Einrichtung"
+        }
+      },
+      {
+        "value": "accident",
+        "label": {
+          "es": "Daño causado por otra persona",
+          "de": "Unfall/Schaden durch Dritte"
+        }
+      },
+      {
+        "value": "under25_parent_outside",
+        "label": {
+          "es": "Menor de 25 y progenitor fuera de la BG",
+          "de": "Unter 25, Elternteil außerhalb BG"
+        }
+      }
+    ]
+  },
+  {
+    "id": "history",
+    "type": "multi",
+    "title": {
+      "es": "¿Qué ocurrió en los últimos años?",
+      "de": "Was traf in den letzten Jahren zu?"
+    },
+    "help": {
+      "es": "El Hauptantrag del Jobcenter pregunta por prestaciones de 3 años y situaciones de 5 años.",
+      "de": "Der Jobcenter-Hauptantrag fragt nach Leistungsbezug der letzten 3 Jahre und Lebenssituationen der letzten 5 Jahre."
+    },
+    "options": [
+      {
+        "value": "benefits3y",
+        "label": {
+          "es": "Bürgergeld/Sozialhilfe últimos 3 años",
+          "de": "Bürgergeld/Sozialhilfe letzte 3 Jahre"
+        }
+      },
+      {
+        "value": "employment5y",
+        "label": {
+          "es": "Empleo últimos 5 años",
+          "de": "Beschäftigung letzte 5 Jahre"
+        }
+      },
+      {
+        "value": "self5y",
+        "label": {
+          "es": "Autónomo/a últimos 5 años",
+          "de": "Selbständig letzte 5 Jahre"
+        }
+      },
+      {
+        "value": "replacement5y",
+        "label": {
+          "es": "ALG/Krankengeld/etc. últimos 5 años",
+          "de": "ALG/Krankengeld usw. letzte 5 Jahre"
+        }
+      },
+      {
+        "value": "care5y",
+        "label": {
+          "es": "Cuidado de familiares",
+          "de": "Angehörige gepflegt"
+        }
+      },
+      {
+        "value": "service5y",
+        "label": {
+          "es": "Servicio voluntario/militar",
+          "de": "Freiwilligen-/Wehrdienst"
+        }
+      }
+    ]
+  }
+];
+APP_DATA.formMaps = {
+  "grundsicherung": {
+    "title": {
+      "es": "Preparación de formularios Jobcenter",
+      "de": "Formularvorbereitung Jobcenter"
+    },
+    "forms": [
+      {
+        "id": "HA",
+        "title": {
+          "es": "HA · Hauptantrag 04/2026",
+          "de": "HA · Hauptantrag 04/2026"
+        },
+        "source": "https://www.arbeitsagentur.de/datei/antrag-sgb2_ba042689.pdf",
+        "fields": [
+          {
+            "no": "1",
+            "title": {
+              "es": "Nombre",
+              "de": "Vorname"
+            },
+            "when": "always"
