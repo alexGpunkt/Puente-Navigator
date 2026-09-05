@@ -37,7 +37,7 @@ jobs:
             echo "PUENTE_BOOTSTRAP_APPLIED=1" >> "$GITHUB_ENV"
           fi
 
-      - name: Normalize bootstrap transcription artifacts
+      - name: Normalize legacy bootstrap artifacts
         if: env.PUENTE_BOOTSTRAP_APPLIED == '1'
         shell: bash
         run: |
@@ -50,16 +50,14 @@ jobs:
           bad="rep.push('[START] '+(await page.evaluate(()=>document.querySelector('.next-step h1')?.textContent||'KEIN next-step'));"
           good="rep.push('[START] '+(await page.evaluate(()=>document.querySelector('.next-step h1')?.textContent||'KEIN next-step')));"
           if bad in s:
-              s=s.replace(bad,good)
-              p.write_text(s,encoding='utf-8')
+              p.write_text(s.replace(bad,good),encoding='utf-8')
 
           p=Path('features.js')
           s=p.read_text(encoding='utf-8')
           old='''  async function ensureQrLib() {\n    await ensureLib("QRCode", "vendor/qrcode.min.js",\n      "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js");\n  }'''
           new='''  function installQrToCanvasCompat() {\n    const QR=window.QRCode;\n    if(!QR || QR.toCanvas) return;\n    QR.toCanvas=function(canvas,text,opts={},cb){\n      const work=new Promise((resolve,reject)=>{\n        let holder;\n        try{\n          const size=Math.max(64,Number(opts.width)||256);\n          holder=document.createElement("div");\n          holder.style.cssText="position:absolute;left:-10000px;top:-10000px;width:1px;height:1px;overflow:hidden";\n          document.body.appendChild(holder);\n          new QR(holder,{text:String(text),width:size,height:size,correctLevel:QR.CorrectLevel?.M});\n          const source=holder.querySelector("canvas");\n          if(!source) throw new Error("QR canvas unavailable");\n          canvas.width=size; canvas.height=size;\n          const ctx=canvas.getContext("2d");\n          if(!ctx) throw new Error("Canvas 2D unavailable");\n          ctx.clearRect(0,0,size,size); ctx.drawImage(source,0,0,size,size);\n          holder.remove(); holder=null;\n          resolve(canvas);\n        }catch(err){ try{holder?.remove();}catch(_){} reject(err); }\n      });\n      if(typeof cb==="function") work.then(()=>cb(null),cb);\n      return work;\n    };\n  }\n\n  async function ensureQrLib() {\n    await ensureLib("QRCode", "vendor/qrcode.min.js",\n      "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js");\n    installQrToCanvasCompat();\n  }'''
-          if old not in s:
-              raise SystemExit('Expected ensureQrLib block not found')
-          p.write_text(s.replace(old,new),encoding='utf-8')
+          if old in s:
+              p.write_text(s.replace(old,new),encoding='utf-8')
 
           p=Path('README.md')
           p.write_text(p.read_text(encoding='utf-8').replace('QRCode 1.5.3','QRCode.js 1.0.0'),encoding='utf-8')
@@ -68,7 +66,7 @@ jobs:
       - name: Syntax and extraction tests
         run: |
           set -euo pipefail
-          for f in storage.js voice.js capture.js data.js features.js app.js sw.js tests/*.js; do node --check "$f"; done
+          for f in storage.js voice.js capture.js data.js features.js app.js sw.js icons.js tests/*.js; do node --check "$f"; done
           node tests/00-datenintegritaet.js
           node tests/06-capture.js
 
@@ -120,6 +118,9 @@ jobs:
             vendor/tesseract/lang/spa.traineddata.gz vendor/tesseract/lang/eng.traineddata.gz vendor/whisper/main.js vendor/whisper/ggml-tiny-q5_1.bin; do
             test -s "_site/$f"
           done
+          for f in fonts/fira-sans-latin-400-normal.woff2 fonts/fira-sans-latin-500-normal.woff2 fonts/fira-sans-latin-600-normal.woff2 fonts/fira-sans-latin-700-normal.woff2; do
+            test -s "_site/$f"
+          done
 
       - name: QR browser smoke test
         shell: bash
@@ -144,6 +145,9 @@ jobs:
       - name: Static application smoke checks
         run: |
           set -euo pipefail
+          grep -q 'v0.9.0' _site/README.md
+          grep -q 'icons.js' _site/index.html
+          grep -q 'fira-sans-latin-400-normal.woff2' _site/styles.css
           grep -q 'capture.js' _site/index.html
           grep -q 'puente-coi-reload' _site/index.html
           grep -q 'Cross-Origin-Embedder-Policy' _site/sw.js
@@ -192,7 +196,7 @@ jobs:
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Publish tested Puente v0.7.0 source and offline runtime [skip ci]"
+            git commit -m "Publish tested Puente v0.9.0 source and offline runtime [skip ci]"
             git push origin HEAD:"${GITHUB_REF_NAME}"
           fi
 
