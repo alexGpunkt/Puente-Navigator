@@ -1,0 +1,327 @@
+  background:transparent;padding:13px 34px 13px 14px;position:relative;
+  display:grid;grid-template-columns:42px 1fr;column-gap:13px;row-gap:1px;align-items:center}
+.grid .card:last-child{border-bottom:0}
+.grid .card>*{grid-column:2;min-width:0}
+.grid .card-icon{grid-column:1;grid-row:1/span 4;align-self:center;margin:0;
+  width:42px;height:42px;border-radius:12px;background:var(--tint);border:1px solid var(--accent);
+  color:var(--brand);display:grid;place-items:center;font-size:1rem}
+.grid .card-icon .ic{width:22px;height:22px}
+.grid .card h3{font-size:.98rem;margin:0}
+.grid .card p{font-size:.85rem;margin:2px 0 0}
+.grid .card .meta{margin-top:7px}
+.card.clickable::after{content:"";position:absolute;right:15px;top:50%;width:7px;height:7px;
+  border-right:2px solid #9ab0be;border-top:2px solid #9ab0be;
+  transform:translateY(-50%) rotate(45deg)}
+.card.clickable:active{transform:none;background:var(--tint)}
+
+/* --- Marker -------------------------------------------------------------- */
+.badge{border-radius:7px;padding:3px 7px;font-size:.72rem;font-weight:600;
+  background:var(--surface2);color:var(--ink2)}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.bad{background:var(--bad-soft);color:var(--bad)}
+
+/* --- Hinweise ------------------------------------------------------------ */
+.notice{border-radius:var(--radius);background:var(--tint);border-color:var(--accent);
+  font-size:.89rem;padding:12px 13px}
+.notice.warning{background:var(--warn-soft);border-color:#ecd9b0}
+.notice.danger{background:var(--bad-soft);border-color:#eec8c8}
+.local-banner{border-radius:var(--radius);background:var(--ok-soft);border-color:#c6e3d3;
+  font-size:.83rem;padding:12px 13px}
+.local-banner strong{color:var(--ok)}
+
+/* --- Erfassungsmodul ----------------------------------------------------- */
+.upload-zone{border:1px solid var(--line);background:var(--surface);border-radius:18px;
+  box-shadow:var(--shadow);padding:16px}
+.upload-zone.drag{border-color:var(--brand2);background:var(--tint)}
+.upload-zone .upload-icon{width:48px;height:48px;margin:0 auto 10px;border-radius:14px;
+  background:var(--brand);color:#fff;display:grid;place-items:center;font-size:1.1rem}
+.upload-zone .upload-icon .ic{width:24px;height:24px}
+.upload-zone h3{font-size:1rem;margin-bottom:3px}
+.upload-zone p{font-size:.83rem}
+.capture-card{background:var(--surface);border-radius:15px}
+.capture-card strong{font-size:.92rem}
+.capture-card p{font-size:.79rem}
+
+/* --- Dokumente und Fakten ------------------------------------------------ */
+.doc-item,.req,.form-field,.progress-box,.fact{border-radius:var(--radius)}
+.doc-thumb{border-radius:11px}
+.empty{border:1px dashed #b6c8d2;border-radius:var(--radius);background:var(--tint);
+  padding:22px 16px;font-size:.87rem}
+.empty-illustration{font-size:1.6rem;margin-bottom:6px;color:#8ba4b3}
+.empty-illustration .ic{width:30px;height:30px}
+
+/* --- Quellenliste -------------------------------------------------------- */
+.source-list{display:block;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);overflow:hidden}
+.source-list a{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border:0;border-bottom:1px solid var(--line);border-radius:0;padding:12px 14px;
+  min-height:48px;font-size:.88rem;color:var(--ink);text-decoration:none;font-weight:500}
+.source-list a:last-child{border-bottom:0}
+.source-list a .ic{color:#8ba4b3}
+
+/* --- Weitere Listen ------------------------------------------------------ */
+.more-item{border-radius:var(--radius);min-height:56px}
+.more-icon{font-size:1.1rem}
+.more-icon .ic{width:23px;height:23px;color:var(--brand)}
+
+/* --- Untere Navigation --------------------------------------------------- */
+.bottom-nav{background:rgba(255,255,255,.98);border-top:1px solid var(--line)}
+.nav-btn{position:relative;color:#7c8fa0;gap:3px}
+.nav-btn span{font-size:1.18rem;line-height:1}
+.nav-btn small{font-size:.66rem;font-weight:500}
+.nav-btn.active{color:var(--brand);font-weight:600}
+.nav-btn.active small{font-weight:600}
+.nav-btn.active::before{content:"";position:absolute;top:7px;left:50%;transform:translateX(-50%);
+  width:16px;height:2.5px;border-radius:2px;background:var(--brand)}
+
+/* --- Dialoge ------------------------------------------------------------- */
+.modal{border-radius:20px}
+.modal-head h2{font-size:1.1rem}
+
+/* --- Eingaben: iOS-Zoom vermeiden ---------------------------------------- */
+input,select,textarea,.searchbox,.session-input,.manual-text,.full-input,
+.doc-type-select,.map-select{font-size:16px}
+.searchbox{border-radius:12px;min-height:var(--tap)}
+
+/* --- Dunkles Farbschema -------------------------------------------------- */
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0c1720;--surface:#14232d;--surface2:#1b2f3b;--ink:#e6eef2;--ink2:#b9cbd5;--muted:#93aab8;
+    --brand:#6fc0d8;--brand2:#8fd3e6;--brand-deep:#0a2c3a;--accent:#1b3a48;--tint:#16303c;
+    --ok:#5cc49a;--ok-soft:#12362b;--warn:#e0ac52;--warn-soft:#33280f;--bad:#e88b8b;--bad-soft:#3a1e1e;
+    --line:#26414f;--shadow:0 12px 28px -14px rgba(0,0,0,.6)
+  }
+  .topbar{background:#0a2c3a}
+  .bottom-nav{background:rgba(20,35,45,.98)}
+  .hero,.next-step{background:#0f3e50}
+  .hero p{color:#c4dde5}
+  .next-cta{background:var(--brand);color:#08222d;border-color:var(--brand)}
+  .next-step.danger{background:#4a1f24}
+  .next-step.ok{background:#123528}
+  .upload-zone .upload-icon{background:var(--brand);color:#08222d}
+  .grid .card-icon{background:var(--tint);border-color:var(--accent);color:var(--brand)}
+  .lang-opt.on{background:#0c1720;color:var(--brand)}
+}
+
+
+/* --- Nachschärfung: Aktionsraster, Optionen, Quellen --------------------- */
+.brand-btn small{max-width:none}
+
+/* Zweispaltige Sekundäraktionen statt Buttonstapel */
+.case-summary-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.case-summary-actions>*,.case-summary-actions>button{width:100%;min-width:0;display:flex;align-items:center;gap:9px;
+  justify-content:flex-start;text-align:left;min-height:52px;padding:12px 13px;line-height:1.25;
+  overflow-wrap:anywhere}
+.case-summary-actions>*>svg{flex:0 0 auto}
+.case-summary-actions>.primary-btn{grid-column:1/-1;justify-content:center;min-height:50px}
+.case-summary-actions>.danger-btn{grid-column:1/-1}
+.toolbar>.secondary-btn,.toolbar>.ghost-btn{flex:1 1 44%}
+.capture-actions>.secondary-btn,.capture-actions>.danger-btn{flex:1 1 100%}
+
+/* Auswahloptionen mit sichtbarer Markierung */
+.option-grid{grid-template-columns:1fr;gap:8px}
+.option-btn{display:grid;grid-template-columns:21px 1fr;column-gap:12px;align-items:start;
+  padding:13px 14px;min-height:60px;border-radius:var(--radius)}
+.option-btn::before{content:"";width:21px;height:21px;border-radius:50%;
+  border:1.8px solid #b4c4ce;margin-top:1px;background:var(--surface)}
+.option-btn.selected{box-shadow:inset 0 0 0 1px var(--brand);border-color:var(--brand);background:var(--tint)}
+.option-btn.selected::before{border-color:var(--brand);background:var(--brand);
+  box-shadow:inset 0 0 0 3.5px var(--surface)}
+.option-btn strong{grid-column:2;min-width:0;font-size:.97rem}
+.option-btn small{grid-column:2;min-width:0;font-size:.83rem}
+
+/* Amtliche Quellen: aufklappbare Zeile statt Linkliste */
+.sources{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  margin-top:22px;overflow:hidden}
+.sources>summary{display:flex;align-items:center;gap:13px;padding:13px 14px;min-height:58px;
+  cursor:pointer;list-style:none}
+.sources>summary::-webkit-details-marker{display:none}
+.sources>summary::after{content:"";margin-left:auto;width:7px;height:7px;flex:0 0 auto;
+  border-right:2px solid #9ab0be;border-bottom:2px solid #9ab0be;
+  transform:translateY(-3px) rotate(45deg);transition:transform .15s}
+.sources[open]>summary::after{transform:translateY(1px) rotate(-135deg)}
+.sources-icon{width:42px;height:42px;flex:0 0 auto;border-radius:12px;background:var(--tint);
+  border:1px solid var(--accent);color:var(--brand);display:grid;place-items:center;font-size:1rem}
+.sources-icon .ic{width:22px;height:22px}
+.sources-text strong{display:block;font-size:.98rem}
+.sources-text small{display:block;color:var(--muted);font-size:.83rem;margin-top:2px}
+.sources .source-list{border:0;border-top:1px solid var(--line);border-radius:0}
+.case-summary-actions>.ghost-btn{border:1px solid var(--line);background:var(--surface)}
+.phase{min-width:0}
+.phase>small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+
+PUENTE_EOF_styles_css
+
+mkdir -p "$(dirname 'app.js')"
+cat > 'app.js' <<'PUENTE_EOF_app_js'
+
+(() => {
+  const $ = (s, root=document) => root.querySelector(s);
+  const $$ = (s, root=document) => [...root.querySelectorAll(s)];
+  const defaultState = {
+    lang:"es", route:"home", service:null, formService:null,
+    statuses:{}, profile:{}, assistantStep:0, assistantDone:false, showAllFields:false,
+    settings:{}, phase:"prepare"
+  };
+  const ROUTES=["home","assistant","service","fields","case","dossier","docs","lost","progress","deadlines","advice","fill","settings","outbox","household"];
+  function obj(v){ return (v && typeof v==="object" && !Array.isArray(v)) ? v : {}; }
+
+  const Storage = window.PuenteStorage;
+  let state = null, formValues = null, docSession = null;
+  const CAPTURE = window.PuenteCapture || null;
+  let storageAlert = null;     // letzte Schreibstörung, wird als Banner gezeigt
+  const liveFiles = new Map();
+
+  function normalizeState(raw){
+    const st={...defaultState, ...obj(raw)};
+    // Defekte oder veraltete Werte abfangen, damit die App nicht weiss startet.
+    if(!APP_DATA.ui[st.lang]) st.lang=defaultState.lang;
+    if(!ROUTES.includes(st.route)) st.route="home";
+    st.statuses=obj(st.statuses);
+    st.profile=obj(st.profile);
+    st.settings=obj(st.settings);
+    if(!["prepare","submitted","decided"].includes(st.phase)) st.phase="prepare";
+    st.assistantStep=Number.isFinite(st.assistantStep)?st.assistantStep:0;
+    for(const id of Object.keys(st.statuses)) if(!APP_DATA.documents[id]) delete st.statuses[id];
+    return st;
+  }
+
+  // Schreiben laeuft ueber das Speichermodul: es buendelt Schreibvorgaenge,
+  // waehlt je nach Stufe sessionStorage oder IndexedDB und meldet Fehler.
+  function saveState(){ Storage.save("app"); }
+  function saveSession(){ Storage.save("personal"); }
+  function saveDocSession(){ Storage.save("personal"); }
+  function tr(key){ return (APP_DATA.ui[state.lang]||APP_DATA.ui.es)[key] ?? APP_DATA.ui.es[key] ?? key; }
+  function tx(obj){ return obj?.[state.lang] ?? ""; }
+  function esc(s=""){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])); }
+  function arr(v){ return Array.isArray(v) ? v : []; }
+  function L(es,de){ return state.lang==="es" ? es : de; }
+
+  function setRoute(route, opts={}){
+    if(!ROUTES.includes(route)) route="home";
+    const changed = state.route!==route || opts.service!==undefined || opts.formService!==undefined;
+    state.route = route;
+    if(opts.service !== undefined) state.service = opts.service;
+    if(opts.formService !== undefined) state.formService = opts.formService;
+    saveState();
+    // Android-Zurueck-Taste soll in der App navigieren, nicht die App verlassen.
+    if(changed && !opts.fromHistory){
+      try{ history.pushState({route,service:state.service,formService:state.formService},"",`#${route}`); }catch(_){}
+    }
+    render();
+    scrollTop();
+  }
+
+  function scrollTop(){
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    window.scrollTo({top:0, behavior: reduce?"auto":"smooth"});
+  }
+
+  function announceRoute(){
+    const el=$("#routeAnnouncer"); if(!el) return;
+    const names={home:tr("navHome"),assistant:tr("navAssistant"),case:tr("navCase"),
+      docs:tr("navDocs"),lost:tr("navLost"),progress:tr("progress"),
+      deadlines:tr("navDeadlines"),advice:tr("navAdvice"),
+      service:L("Checklist","Checkliste"), fields:L("Formulario","Formular"),
+      dossier:L("Expediente","Fallakte"), fill:L("Formulario oficial","Amtliches Formular")};
+    el.textContent=names[state.route]||"";
+  }
+
+  function storageBanner(){
+    const a=storageAlert; if(!a) return "";
+    const quota=a.quota;
+    return `<div class="notice danger storage-alert">
+      <strong>⚠️ ${L("No se ha podido guardar","Speichern nicht möglich")}:</strong>
+      ${quota
+        ? L("La memoria del navegador está llena. Los últimos cambios podrían no conservarse. Exporta el expediente y borra documentos que ya no necesites.",
+            "Der Browserspeicher ist voll. Die letzten Änderungen sind womöglich nicht gesichert. Bitte die Fallakte exportieren und nicht mehr benötigte Dokumente löschen.")
+        : L("Los cambios podrían no conservarse en este navegador (por ejemplo en modo privado).",
+            "Änderungen werden in diesem Browser womöglich nicht gesichert (etwa im privaten Modus).")}
+      <div class="toolbar">
+        <button type="button" class="ghost-btn" id="storageAlertOk">${L("Entendido","Verstanden")}</button>
+        <button type="button" class="secondary-btn" data-go="dossier">${L("Exportar expediente","Fallakte exportieren")}</button>
+      </div>
+    </div>`;
+  }
+
+  function settingsView(){
+    const st=Storage.status();
+    const modes=[
+      {id:"session", icon:"🕐", title:L("Sesión","Sitzung"),
+       sub:L("Los datos personales desaparecen al cerrar la pestaña. Recomendado.",
+             "Persönliche Daten verschwinden beim Schließen des Tabs. Empfohlen.")},
+      {id:"device", icon:"📱", title:L("Dispositivo","Gerät"),
+       sub:L("Los datos confirmados permanecen hasta que los borres. Solo en un móvil propio.",
+             "Bestätigte Angaben bleiben, bis sie gelöscht werden. Nur auf einem eigenen Handy.")},
+      {id:"shared", icon:"👥", title:L("Dispositivo compartido","Geteiltes Gerät"),
+       sub:L("Como sesión, y además borrado automático tras 15 minutos sin actividad.",
+             "Wie Sitzung, zusätzlich automatische Löschung nach 15 Minuten ohne Aktivität.")}
+    ];
+    return `
+      <div class="service-head">
+        <div class="big-icon">⚙️</div>
+        <div><h1>${L("Ajustes y privacidad","Einstellungen und Datenschutz")}</h1>
+        <p>${L("Dónde se guardan tus datos y cuándo se borran.","Wo die Daten liegen und wann sie gelöscht werden.")}</p></div>
+      </div>
+
+      <div class="section-title"><div><h2>${L("Conservación de datos","Datenhaltung")}</h2></div></div>
+      <div class="mode-list">
+        ${modes.map(m=>`<button type="button" class="mode-item ${m.id===st.mode?"active":""}" data-mode="${m.id}">
+          <span class="more-icon" aria-hidden="true">${m.icon}</span>
+          <span><strong>${esc(m.title)}</strong><small>${esc(m.sub)}</small></span>
+          <span class="mode-check" aria-hidden="true">${m.id===st.mode?"✓":""}</span>
+        </button>`).join("")}
+      </div>
+      ${st.mode==="device"?`<div class="notice warning">${L(
+        "En este modo quedan datos sociales en el dispositivo. No lo uses en un equipo compartido o prestado.",
+        "In dieser Stufe bleiben Sozialdaten auf dem Gerät liegen. Nicht auf einem geteilten oder geliehenen Gerät verwenden.")}</div>`:""}
+
+      <div class="section-title"><div><h2>${L("Voz","Sprache")}</h2></div></div>
+      <label class="checkline"><input type="checkbox" id="voiceConsent" ${state.settings?.voiceConsent?"checked":""}>
+        ${L("Permitir reconocimiento de voz (el audio se envía al fabricante del navegador)",
+            "Spracherkennung erlauben (das Audio geht an den Browser-Hersteller)")}</label>
+      <p class="small">${L("Leer en voz alta funciona siempre y sin conexión; no necesita esta casilla.",
+                           "Das Vorlesen funktioniert immer und ohne Verbindung; dafür ist dieses Häkchen nicht nötig.")}</p>
+
+      <div class="section-title"><div><h2>${L("Estado","Status")}</h2></div></div>
+      <table class="dossier-table"><tbody>
+        <tr><th>${L("Almacén","Ablage")}</th><td>${esc(st.backend)}</td></tr>
+        <tr><th>${L("Versión de datos","Datenversion")}</th><td>${st.schema}</td></tr>
+        <tr><th>${L("Tamaño aproximado","Ungefähre Größe")}</th><td>${formatBytes(st.bytes)}</td></tr>
+        ${st.lastError?`<tr><th>${L("Última incidencia","Letzte Störung")}</th><td>${esc(st.lastError.where)}: ${esc(st.lastError.message)}</td></tr>`:""}
+      </tbody></table>
+
+      <div class="toolbar">
+        <button type="button" class="secondary-btn" id="clearPersonalBtn">🧹 ${L("Borrar datos personales ahora","Persönliche Daten jetzt löschen")}</button>
+        <button type="button" class="danger-btn" id="resetBtn">🗑️ ${tr("reset")}</button>
+      </div>
+
+      <div class="notice">${tr("privacyShort")}</div>
+    
+      <div class="section-title"><div><h2>${L("Traspaso del caso","Fallübergabe")}</h2>
+        <p>${L("Pasar el caso a otro dispositivo por código QR o archivo, sin servidor.","Den Fall per QR-Code oder Datei auf ein anderes Gerät übergeben, ohne Server.")}</p></div></div>
+      <div class="toolbar"><button type="button" class="secondary-btn" id="handoverBtn">🔄 ${L("Abrir traspaso","Übergabe öffnen")}</button></div>
+    `;
+  }
+
+  function toast(msg){
+    const el=$("#toast"); if(!el) return;
+    el.textContent=msg; el.hidden=false; el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t=setTimeout(()=>{el.classList.remove("show");setTimeout(()=>{el.hidden=true},250)},2200);
+  }
+
+  function render(){
+    try { renderInner(); }
+    catch(err){
+      // Ein Fehler in einer Ansicht darf nicht die ganze App unbrauchbar machen.
+      console.error("Puente render:", err);
+      renderFailure(err);
+    }
+  }
+
+  function renderFailure(err){
+    const app=$("#app"); if(!app) return;
+    const lang=(state&&state.lang)==="es"?"es":"de";
+    const t=(es,de)=>lang==="es"?es:de;
