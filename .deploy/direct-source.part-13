@@ -1,0 +1,604 @@
+          },
+          {
+            "no": "2",
+            "title": {
+              "es": "Apellido(s)",
+              "de": "Nachname"
+            },
+            "when": "always"
+          },
+          {
+            "no": "3",
+            "title": {
+              "es": "Fecha de nacimiento",
+              "de": "Geburtsdatum"
+            },
+            "when": "always"
+          },
+          {
+            "no": "4",
+            "title": {
+              "es": "Apellido de nacimiento / anterior",
+              "de": "Geburtsname / früherer Name"
+            },
+            "when": "always"
+          },
+          {
+            "no": "5",
+            "title": {
+              "es": "Lugar de nacimiento",
+              "de": "Geburtsort"
+            },
+            "when": "always"
+          },
+          {
+            "no": "6",
+            "title": {
+              "es": "País de nacimiento",
+              "de": "Geburtsland"
+            },
+            "when": "always"
+          },
+          {
+            "no": "7",
+            "title": {
+              "es": "Nacionalidad",
+              "de": "Staatsangehörigkeit"
+            },
+            "when": "always"
+          },
+          {
+            "no": "8",
+            "title": {
+              "es": "Sexo",
+              "de": "Geschlecht"
+            },
+            "when": "always"
+          },
+          {
+            "no": "9–12",
+            "title": {
+              "es": "Dirección actual: calle, número, CP, ciudad",
+              "de": "Aktuelle Anschrift: Straße, Hausnr., PLZ, Ort"
+            },
+            "when": "always"
+          },
+          {
+            "no": "14",
+            "title": {
+              "es": "Teléfono (voluntario)",
+              "de": "Telefon (freiwillig)"
+            },
+            "when": "always"
+          },
+          {
+            "no": "15–16",
+            "title": {
+              "es": "Sin domicilio fijo / alojado en otra persona o institución",
+              "de": "Kein fester Wohnsitz / wohnhaft bei"
+            },
+            "when": "temporary"
+          },
+          {
+            "no": "17",
+            "title": {
+              "es": "Titular de cuenta",
+              "de": "Kontoinhaber/in"
+            },
+            "when": "always"
+          },
+          {
+            "no": "18",
+            "title": {
+              "es": "IBAN",
+              "de": "IBAN"
+            },
+            "when": "always",
+            "helpDoc": "iban"
+          },
+          {
+            "no": "19",
+            "title": {
+              "es": "Motivo si no puede indicar cuenta",
+              "de": "Grund, wenn kein Basiskonto angegeben werden kann"
+            },
+            "when": "no_bank"
+          },
+          {
+            "no": "20",
+            "title": {
+              "es": "Renten-/Sozialversicherungsnummer",
+              "de": "Renten-/Sozialversicherungsnummer"
+            },
+            "when": "always",
+            "helpDoc": "social_insurance"
+          },
+          {
+            "no": "21",
+            "title": {
+              "es": "Steuer-ID",
+              "de": "Steuer-ID"
+            },
+            "when": "always",
+            "helpDoc": "tax_id"
+          },
+          {
+            "no": "22",
+            "title": {
+              "es": "Tutor/a, representante o apoderado/a",
+              "de": "Betreuer/in, Bevollmächtigte/r oder Vormund"
+            },
+            "when": "always"
+          },
+          {
+            "no": "23",
+            "title": {
+              "es": "Aufenthaltstitel válido",
+              "de": "Gültiger Aufenthaltstitel"
+            },
+            "when": "foreign"
+          },
+          {
+            "no": "24–25",
+            "title": {
+              "es": "Asylbewerberleistungen y fecha final",
+              "de": "Asylbewerberleistungen und Enddatum"
+            },
+            "when": "asyl"
+          },
+          {
+            "no": "26",
+            "title": {
+              "es": "AZR-Nummer, si existe",
+              "de": "AZR-Nummer, falls vorhanden"
+            },
+            "when": "foreign"
+          },
+          {
+            "no": "27",
+            "title": {
+              "es": "Verpflichtungserklärung",
+              "de": "Verpflichtungserklärung"
+            },
+            "when": "foreign"
+          },
+          {
+            "no": "28",
+            "title": {
+              "es": "Número nacional de identificación del país de origen",
+              "de": "Nationale Personenidentifikationsnummer"
+            },
+            "when": "foreign"
+          },
+          {
+            "no": "29–30",
+            "title": {
+              "es": "Fecha desde la que se solicita la prestación",
+              "de": "Zeitpunkt der Antragstellung"
+            },
+            "when": "always"
+          },
+          {
+            "no": "31",
+            "title": {
+              "es": "Fecha de entrada en Alemania si vivió antes en el extranjero",
+              "de": "Einreisedatum nach Deutschland, wenn zuvor im Ausland gelebt"
+            },
+            "when": "foreign"
+          },
+          {
+            "no": "32–33",
+            "title": {
+              "es": "Estado civil y, si procede, fecha de separación/divorcio",
+              "de": "Familienstand und ggf. Trennungs-/Scheidungsdatum"
+            },
+            "when": "always"
+          },
+          {
+            "no": "34",
+            "title": {
+              "es": "Capacidad para trabajar al menos 3 horas/día",
+              "de": "Erwerbsfähigkeit mindestens 3 Stunden täglich"
+            },
+            "when": "always"
+          },
+          {
+            "no": "35",
+            "title": {
+              "es": "Familia monoparental",
+              "de": "Alleinerziehend"
+            },
+            "when": "always"
+          },
+          {
+            "no": "36–37",
+            "title": {
+              "es": "Embarazo / fecha probable del parto",
+              "de": "Schwangerschaft / voraussichtlicher Entbindungstermin"
+            },
+            "when": "pregnant"
+          },
+          {
+            "no": "38",
+            "title": {
+              "es": "Menor de 25 con progenitor fuera de la BG",
+              "de": "Unter 25 mit Elternteil außerhalb BG"
+            },
+            "when": "under25_parent_outside"
+          },
+          {
+            "no": "39–41",
+            "title": {
+              "es": "Escuela, universidad o Ausbildung y costes relacionados",
+              "de": "Schule, Studium oder Ausbildung und damit verbundene Angaben"
+            },
+            "when": "education"
+          },
+          {
+            "no": "42–43",
+            "title": {
+              "es": "Otras prestaciones solicitadas o previstas",
+              "de": "Andere beantragte/beabsichtigte Leistungen"
+            },
+            "when": "always"
+          },
+          {
+            "no": "44",
+            "title": {
+              "es": "Dieta médica costosa",
+              "de": "Kostenaufwändige Ernährung"
+            },
+            "when": "special_diet"
+          },
+          {
+            "no": "45–46",
+            "title": {
+              "es": "Discapacidad y prestaciones de participación",
+              "de": "Behinderung und Teilhabeleistungen"
+            },
+            "when": "disability"
+          },
+          {
+            "no": "47",
+            "title": {
+              "es": "Necesidad especial inevitable",
+              "de": "Unabweisbarer besonderer Bedarf"
+            },
+            "when": "special_need"
+          },
+          {
+            "no": "48–50",
+            "title": {
+              "es": "Estancia en institución y duración",
+              "de": "Stationäre Einrichtung und Dauer"
+            },
+            "when": "institution"
+          },
+          {
+            "no": "51–58",
+            "title": {
+              "es": "Bürgergeld/Sozialhilfe de los últimos 3 años: tipo, período y organismo",
+              "de": "Bürgergeld/Sozialhilfe letzte 3 Jahre: Art, Zeitraum, Träger"
+            },
+            "when": "benefits3y"
+          },
+          {
+            "no": "59–66",
+            "title": {
+              "es": "Empleos de los últimos 5 años y posibles salarios pendientes",
+              "de": "Beschäftigungen letzte 5 Jahre und ggf. offene Lohnansprüche"
+            },
+            "when": "employment5y"
+          },
+          {
+            "no": "67",
+            "title": {
+              "es": "Actividad autónoma en los últimos 5 años",
+              "de": "Selbständigkeit/Freiberuflichkeit letzte 5 Jahre"
+            },
+            "when": "self_history_or_current"
+          },
+          {
+            "no": "68–70",
+            "title": {
+              "es": "Prestaciones sustitutivas del salario y período",
+              "de": "Entgeltersatzleistungen und Zeitraum"
+            },
+            "when": "replacement_or_alg1"
+          },
+          {
+            "no": "71",
+            "title": {
+              "es": "Servicio militar/voluntario",
+              "de": "Wehr-/Freiwilligendienst"
+            },
+            "when": "service5y"
+          },
+          {
+            "no": "72",
+            "title": {
+              "es": "Cuidado de familiares",
+              "de": "Angehörige gepflegt"
+            },
+            "when": "care5y"
+          },
+          {
+            "no": "73",
+            "title": {
+              "es": "Cómo se financió la vida si nada de 59–72 aplica",
+              "de": "Lebensunterhalt, falls 59–72 nicht zutreffen"
+            },
+            "when": "history_empty"
+          },
+          {
+            "no": "74",
+            "title": {
+              "es": "Derechos frente a terceros, p. ej. herencia/indemnización",
+              "de": "Ansprüche gegenüber Dritten, z. B. Erbschaft/Schadensersatz"
+            },
+            "when": "always"
+          },
+          {
+            "no": "75",
+            "title": {
+              "es": "Accidente/daño causado por tercero",
+              "de": "Unfall/gesundheitlicher Schaden durch Dritte"
+            },
+            "when": "accident"
+          },
+          {
+            "no": "76",
+            "title": {
+              "es": "Seguro médico/pflege gesetzlich familiar u obligatorio",
+              "de": "Gesetzliche Kranken-/Pflegeversicherung familien- oder pflichtversichert"
+            },
+            "when": "always"
+          },
+          {
+            "no": "77",
+            "title": {
+              "es": "Nombre de la Krankenkasse",
+              "de": "Name der Krankenkasse"
+            },
+            "when": "always",
+            "helpDoc": "health_insurance"
+          },
+          {
+            "no": "78",
+            "title": {
+              "es": "Privado, voluntario o sin seguro",
+              "de": "Privat, freiwillig gesetzlich oder nicht versichert"
+            },
+            "when": "always"
+          },
+          {
+            "no": "79",
+            "title": {
+              "es": "¿Vive solo/a?",
+              "de": "Wohnen Sie allein?"
+            },
+            "when": "always"
+          },
+          {
+            "no": "80",
+            "title": {
+              "es": "Personas con las que vive",
+              "de": "Mit welchen Personen wird zusammengewohnt?"
+            },
+            "when": "not_alone"
+          },
+          {
+            "no": "81",
+            "title": {
+              "es": "¿Tiene gastos de alojamiento y calefacción?",
+              "de": "Bedarfe für Unterkunft und Heizung?"
+            },
+            "when": "always"
+          }
+        ]
+      },
+      {
+        "id": "KDU",
+        "title": {
+          "es": "KDU · Alojamiento y calefacción 04/2026",
+          "de": "KDU · Unterkunft und Heizung 04/2026"
+        },
+        "source": "https://www.arbeitsagentur.de/datei/anlagekdu_ba032980.pdf",
+        "fields": [
+          {
+            "no": "1–4",
+            "title": {
+              "es": "Datos personales y BG-Nummer",
+              "de": "Personendaten und BG-Nummer"
+            },
+            "when": "always"
+          },
+          {
+            "no": "5–8",
+            "title": {
+              "es": "Dirección de la vivienda",
+              "de": "Adresse der Unterkunft"
+            },
+            "when": "always"
+          },
+          {
+            "no": "9",
+            "title": {
+              "es": "Número de personas en la vivienda",
+              "de": "Anzahl Personen in der Unterkunft"
+            },
+            "when": "always"
+          },
+          {
+            "no": "10",
+            "title": {
+              "es": "Año de construcción, si se conoce",
+              "de": "Baujahr, falls bekannt"
+            },
+            "when": "always"
+          },
+          {
+            "no": "11–13",
+            "title": {
+              "es": "Número de habitaciones, cocinas y baños",
+              "de": "Anzahl Räume, Küchen, Bäder"
+            },
+            "when": "always"
+          },
+          {
+            "no": "14–18",
+            "title": {
+              "es": "Superficie total y partes usadas/alquiladas/vacías/comerciales",
+              "de": "Gesamtfläche und selbst genutzte/vermietete/leere/gewerbliche Anteile"
+            },
+            "when": "always"
+          },
+          {
+            "no": "19",
+            "title": {
+              "es": "Alquiler u propiedad",
+              "de": "Miete oder Eigentum"
+            },
+            "when": "always"
+          },
+          {
+            "no": "20",
+            "title": {
+              "es": "Alquiler base, Nebenkosten, Heizkosten o Pauschalmiete",
+              "de": "Grundmiete, Nebenkosten, Heizkosten oder Pauschalmiete"
+            },
+            "when": "rent"
+          },
+          {
+            "no": "21–23",
+            "title": {
+              "es": "Datos y costes de vivienda propia",
+              "de": "Angaben und Kosten bei Wohneigentum"
+            },
+            "when": "owner"
+          },
+          {
+            "no": "24",
+            "title": {
+              "es": "Combustible: electricidad/gas/fuel/fernwärme/madera/otro",
+              "de": "Brennstoff: Strom/Gas/Heizöl/Fernwärme/Holz/sonstiges"
+            },
+            "when": "always"
+          },
+          {
+            "no": "25",
+            "title": {
+              "es": "¿Compra el combustible por su cuenta?",
+              "de": "Brennstoff selbst beschafft?"
+            },
+            "when": "always"
+          },
+          {
+            "no": "26",
+            "title": {
+              "es": "Tipo de calefacción",
+              "de": "Art der Heizung"
+            },
+            "when": "always"
+          },
+          {
+            "no": "27",
+            "title": {
+              "es": "Energía para cocinar",
+              "de": "Energiequelle zum Kochen"
+            },
+            "when": "always"
+          },
+          {
+            "no": "28–29",
+            "title": {
+              "es": "Agua caliente central/descentral y energía",
+              "de": "Warmwasser zentral/dezentral und Energiequelle"
+            },
+            "when": "always"
+          },
+          {
+            "no": "30–36",
+            "title": {
+              "es": "Pago directo al propietario: sí/no y datos/IBAN",
+              "de": "Direktzahlung an Vermieter: ja/nein und Daten/IBAN"
+            },
+            "when": "rent"
+          }
+        ]
+      },
+      {
+        "id": "EK",
+        "title": {
+          "es": "EK · Ingresos 04/2026",
+          "de": "EK · Einkommen 04/2026"
+        },
+        "source": "https://www.arbeitsagentur.de/datei/anlageek_ba032960.pdf",
+        "fields": [
+          {
+            "no": "1–7",
+            "title": {
+              "es": "Datos del solicitante y de la persona del anexo",
+              "de": "Daten Antragsteller/in und Person der Anlage"
+            },
+            "when": "always"
+          },
+          {
+            "no": "8",
+            "title": {
+              "es": "Ingresos por trabajo",
+              "de": "Einkommen aus Erwerbstätigkeit"
+            },
+            "when": "always"
+          },
+          {
+            "no": "9–20",
+            "title": {
+              "es": "Datos de hasta dos empleadores y momento del pago",
+              "de": "Daten von bis zu zwei Arbeitgebern und Zahlungszeitpunkt"
+            },
+            "when": "employment"
+          },
+          {
+            "no": "21",
+            "title": {
+              "es": "Actividad autónoma/freiberuflich",
+              "de": "Selbständige/freiberufliche Tätigkeit"
+            },
+            "when": "self_current"
+          },
+          {
+            "no": "22",
+            "title": {
+              "es": "Compensaciones por actividad voluntaria",
+              "de": "Aufwandsentschädigungen aus Ehrenamt"
+            },
+            "when": "always"
+          },
+          {
+            "no": "23",
+            "title": {
+              "es": "Todas las otras entradas: ALG, Krankengeld, Elterngeld, Kindergeld, Unterhalt, BAföG, Rente, alquileres, plataformas, etc.",
+              "de": "Alle weiteren Einnahmen: ALG, Krankengeld, Elterngeld, Kindergeld, Unterhalt, BAföG, Rente, Vermietung, Plattformen usw."
+            },
+            "when": "always"
+          },
+          {
+            "no": "24–32",
+            "title": {
+              "es": "Gastos de desplazamiento al trabajo",
+              "de": "Fahrtkosten zwischen Wohnung und Arbeitsstätte"
+            },
+            "when": "employment"
+          },
+          {
+            "no": "33",
+            "title": {
+              "es": "Otros gastos laborales no reembolsados",
+              "de": "Weitere nicht erstattete Ausgaben aus Arbeitsverhältnis"
+            },
+            "when": "employment"
+          },
+          {
+            "no": "34",
+            "title": {
