@@ -1,13 +1,19 @@
 
+@font-face{font-family:"Fira Sans";src:url(fonts/fira-sans-latin-400-normal.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Fira Sans";src:url(fonts/fira-sans-latin-500-normal.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Fira Sans";src:url(fonts/fira-sans-latin-600-normal.woff2) format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"Fira Sans";src:url(fonts/fira-sans-latin-700-normal.woff2) format("woff2");font-weight:700;font-style:normal;font-display:swap}
+
 :root{
-  --bg:#f4f7fa;--surface:#fff;--surface2:#eef4f8;--ink:#17202a;--muted:#64748b;
-  --brand:#12385b;--brand2:#1f5c8b;--accent:#e8f2fa;--ok:#1d7a4a;--warn:#ad6700;--bad:#a23a3a;
-  --line:#d9e1e8;--shadow:0 8px 28px rgba(18,56,91,.08);--radius:18px;
-  --nav-h:72px;--topbar-h:60px;--tap:44px;
+  --bg:#edf1f4;--surface:#fff;--surface2:#e3eaef;--ink:#15242f;--ink2:#3d5162;--muted:#64798a;
+  --brand:#0b4a5e;--brand2:#0f6180;--brand-deep:#083647;--accent:#dceaee;--tint:#f1f7f9;
+  --ok:#12694a;--ok-soft:#e0f0e7;--warn:#8a5a00;--warn-soft:#faeed8;--bad:#96323a;--bad-soft:#f9e5e5;
+  --line:#d6e0e7;--shadow:0 12px 28px -14px rgba(8,54,71,.45);--radius:14px;
+  --nav-h:74px;--topbar-h:60px;--tap:44px;
   --sal:env(safe-area-inset-left);--sar:env(safe-area-inset-right)
 }
 *{box-sizing:border-box}
-html{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+html{background:var(--bg);color:var(--ink);font-family:"Fira Sans",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
 body{margin:0;min-height:100vh;min-height:100dvh;padding-bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom))}
 button,input{font:inherit}button{cursor:pointer}a{color:var(--brand2)}
 .topbar{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px max(14px,var(--sal)) 10px max(14px,var(--sar));background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
@@ -184,7 +190,7 @@ button,input{font:inherit}button{cursor:pointer}a{color:var(--brand2)}
 }
 
 
-/* ==========================================================================
+/* ========================================================================== 
    v0.4.1 — Mobile-Optimierung, Bedienbarkeit, Kontrast
    Die App wird ueberwiegend unterwegs auf kleinen Android-Geraeten benutzt:
    grosse Tippflaechen, keine iOS-Zoomfallen, korrekte Safe-Areas.
@@ -617,3 +623,240 @@ label:has(#voiceConsent){min-height:var(--tap);display:flex;align-items:center;g
 
 .capture-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.capture-actions .danger-btn{grid-column:1/-1;width:100%;justify-content:center}.capture-actions button{white-space:normal;min-height:var(--tap)}
 @media(max-width:390px){.capture-actions{grid-template-columns:1fr}}
+
+
+/* ============================================================================
+   v0.9 – Redesign: Typografie, Icons, dunkler Markenkopf, Listenlayout
+   Diese Ebene liegt bewusst am Dateiende und überschreibt ältere Regeln.
+   ========================================================================== */
+
+/* --- Grundtypografie ----------------------------------------------------- */
+html{-webkit-font-smoothing:antialiased}
+body{font-size:15.5px;line-height:1.5;letter-spacing:0}
+h1,h2,h3,h4{letter-spacing:-.012em;font-weight:600}
+strong,b{font-weight:600}
+.app-shell{width:min(720px,100%);padding:16px max(16px,var(--sal)) 26px max(16px,var(--sar))}
+.small{font-size:.8rem;line-height:1.45}
+
+/* --- Icons (ersetzen Emojis) --------------------------------------------- */
+.ic{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;
+  width:1.15em;height:1.15em;vertical-align:-.19em}
+.ic svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+
+/* --- Kopfzeile ----------------------------------------------------------- */
+.topbar{background:var(--brand);border-bottom:0;color:#fff;padding:9px max(14px,var(--sal)) 9px max(14px,var(--sar));
+  backdrop-filter:none;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.brand-btn{color:#fff;min-height:44px}
+.brand-btn strong{font-size:1rem;font-weight:600;letter-spacing:-.01em}
+.brand-btn small{color:#a9cbd6;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:15ch}
+.brand-mark{width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.13);
+  border:1px solid rgba(255,255,255,.26);color:#fff;font-size:0}
+.brand-mark .ic{width:21px;height:21px;font-size:16px}
+.brand-mark svg{stroke-width:1.85}
+.top-actions{gap:7px;align-items:center}
+.topbar .icon-btn{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.24);color:#fff;
+  min-height:38px;min-width:38px;border-radius:11px;padding:0;display:grid;place-items:center}
+.topbar .icon-btn .ic{width:19px;height:19px}
+#readBtn.speaking{background:#fff;color:var(--brand);border-color:#fff}
+.lang-switch{display:flex;gap:2px;padding:3px;border:0;border-radius:11px;min-height:38px;
+  background:rgba(255,255,255,.13);align-items:stretch}
+.lang-opt{display:grid;place-items:center;min-width:32px;padding:0 8px;border-radius:8px;
+  font-size:.78rem;font-weight:600;color:#bcd8e2;letter-spacing:.01em}
+.lang-opt.on{background:#fff;color:var(--brand)}
+
+/* --- Bedienelemente ------------------------------------------------------ */
+.primary-btn,.secondary-btn,.ghost-btn,.danger-btn,.chip,.status-btn,.icon-btn,.mini-btn,.form-tab,.phase{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:var(--tap);border-radius:12px;font-weight:600;line-height:1.25}
+.primary-btn{background:var(--brand);border-color:var(--brand);box-shadow:none}
+.secondary-btn{background:var(--surface);border-color:var(--line);color:var(--brand)}
+.ghost-btn{border-color:transparent;background:transparent;color:var(--brand)}
+.danger-btn{border-radius:12px}
+.mini-btn,.status-btn{min-height:38px;border-radius:10px;font-weight:600}
+.toolbar{gap:8px}
+
+/* --- Abschnittsköpfe ----------------------------------------------------- */
+.section-title{align-items:baseline;margin:22px 2px 9px}
+.section-title h2{font-size:1.05rem}
+.section-title p{font-size:.82rem;margin-top:2px}
+.section-title .ghost-btn{min-height:38px;padding:4px 8px;font-size:.83rem}
+
+/* --- Startmodul (nächster Schritt) --------------------------------------- */
+.hero{background:var(--brand);border-radius:20px;padding:18px;box-shadow:var(--shadow)}
+.hero h1{font-size:1.4rem;line-height:1.2}
+.hero p{color:#cfe4ea;font-size:.94rem}
+.next-step .next-icon{width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.15);
+  display:grid;place-items:center;font-size:1rem;margin-bottom:12px}
+.next-step .next-icon .ic{width:21px;height:21px}
+.next-step h1{font-size:1.4rem;margin-bottom:6px}
+.next-step p{margin-bottom:15px}
+.next-cta{background:#fff;color:var(--brand-deep);border-color:#fff;min-height:48px;
+  font-size:1rem;border-radius:12px}
+.next-step.danger{background:#8c3038}
+.next-step.ok{background:#125c40}
+
+/* --- Phasenleiste -------------------------------------------------------- */
+.phase-bar{background:var(--surface2);border-radius:12px;padding:3px;gap:3px;margin:14px 0}
+.phase{flex-direction:row;gap:7px;padding:8px 6px;min-height:42px;border-radius:9px;font-size:.83rem}
+.phase small{font-size:.8rem}
+.phase span{font-size:.95rem}
+.phase.active{box-shadow:none;background:var(--surface);color:var(--brand)}
+
+/* --- Bereichsliste statt Kartenraster ------------------------------------ */
+.grid{grid-template-columns:1fr;gap:0;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.grid .card{border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none;
+  background:transparent;padding:13px 34px 13px 14px;position:relative;
+  display:grid;grid-template-columns:42px 1fr;column-gap:13px;row-gap:1px;align-items:center}
+.grid .card:last-child{border-bottom:0}
+.grid .card>*{grid-column:2;min-width:0}
+.grid .card-icon{grid-column:1;grid-row:1/span 4;align-self:center;margin:0;
+  width:42px;height:42px;border-radius:12px;background:var(--tint);border:1px solid var(--accent);
+  color:var(--brand);display:grid;place-items:center;font-size:1rem}
+.grid .card-icon .ic{width:22px;height:22px}
+.grid .card h3{font-size:.98rem;margin:0}
+.grid .card p{font-size:.85rem;margin:2px 0 0}
+.grid .card .meta{margin-top:7px}
+.card.clickable::after{content:"";position:absolute;right:15px;top:50%;width:7px;height:7px;
+  border-right:2px solid #9ab0be;border-top:2px solid #9ab0be;
+  transform:translateY(-50%) rotate(45deg)}
+.card.clickable:active{transform:none;background:var(--tint)}
+
+/* --- Marker -------------------------------------------------------------- */
+.badge{border-radius:7px;padding:3px 7px;font-size:.72rem;font-weight:600;
+  background:var(--surface2);color:var(--ink2)}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.bad{background:var(--bad-soft);color:var(--bad)}
+
+/* --- Hinweise ------------------------------------------------------------ */
+.notice{border-radius:var(--radius);background:var(--tint);border-color:var(--accent);
+  font-size:.89rem;padding:12px 13px}
+.notice.warning{background:var(--warn-soft);border-color:#ecd9b0}
+.notice.danger{background:var(--bad-soft);border-color:#eec8c8}
+.local-banner{border-radius:var(--radius);background:var(--ok-soft);border-color:#c6e3d3;
+  font-size:.83rem;padding:12px 13px}
+.local-banner strong{color:var(--ok)}
+
+/* --- Erfassungsmodul ----------------------------------------------------- */
+.upload-zone{border:1px solid var(--line);background:var(--surface);border-radius:18px;
+  box-shadow:var(--shadow);padding:16px}
+.upload-zone.drag{border-color:var(--brand2);background:var(--tint)}
+.upload-zone .upload-icon{width:48px;height:48px;margin:0 auto 10px;border-radius:14px;
+  background:var(--brand);color:#fff;display:grid;place-items:center;font-size:1.1rem}
+.upload-zone .upload-icon .ic{width:24px;height:24px}
+.upload-zone h3{font-size:1rem;margin-bottom:3px}
+.upload-zone p{font-size:.83rem}
+.capture-card{background:var(--surface);border-radius:15px}
+.capture-card strong{font-size:.92rem}
+.capture-card p{font-size:.79rem}
+
+/* --- Dokumente und Fakten ------------------------------------------------ */
+.doc-item,.req,.form-field,.progress-box,.fact{border-radius:var(--radius)}
+.doc-thumb{border-radius:11px}
+.empty{border:1px dashed #b6c8d2;border-radius:var(--radius);background:var(--tint);
+  padding:22px 16px;font-size:.87rem}
+.empty-illustration{font-size:1.6rem;margin-bottom:6px;color:#8ba4b3}
+.empty-illustration .ic{width:30px;height:30px}
+
+/* --- Quellenliste -------------------------------------------------------- */
+.source-list{display:block;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);overflow:hidden}
+.source-list a{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border:0;border-bottom:1px solid var(--line);border-radius:0;padding:12px 14px;
+  min-height:48px;font-size:.88rem;color:var(--ink);text-decoration:none;font-weight:500}
+.source-list a:last-child{border-bottom:0}
+.source-list a .ic{color:#8ba4b3}
+
+/* --- Weitere Listen ------------------------------------------------------ */
+.more-item{border-radius:var(--radius);min-height:56px}
+.more-icon{font-size:1.1rem}
+.more-icon .ic{width:23px;height:23px;color:var(--brand)}
+
+/* --- Untere Navigation --------------------------------------------------- */
+.bottom-nav{background:rgba(255,255,255,.98);border-top:1px solid var(--line)}
+.nav-btn{position:relative;color:#7c8fa0;gap:3px}
+.nav-btn span{font-size:1.18rem;line-height:1}
+.nav-btn small{font-size:.66rem;font-weight:500}
+.nav-btn.active{color:var(--brand);font-weight:600}
+.nav-btn.active small{font-weight:600}
+.nav-btn.active::before{content:"";position:absolute;top:7px;left:50%;transform:translateX(-50%);
+  width:16px;height:2.5px;border-radius:2px;background:var(--brand)}
+
+/* --- Dialoge ------------------------------------------------------------- */
+.modal{border-radius:20px}
+.modal-head h2{font-size:1.1rem}
+
+/* --- Eingaben: iOS-Zoom vermeiden ---------------------------------------- */
+input,select,textarea,.searchbox,.session-input,.manual-text,.full-input,
+.doc-type-select,.map-select{font-size:16px}
+.searchbox{border-radius:12px;min-height:var(--tap)}
+
+/* --- Dunkles Farbschema -------------------------------------------------- */
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0c1720;--surface:#14232d;--surface2:#1b2f3b;--ink:#e6eef2;--ink2:#b9cbd5;--muted:#93aab8;
+    --brand:#6fc0d8;--brand2:#8fd3e6;--brand-deep:#0a2c3a;--accent:#1b3a48;--tint:#16303c;
+    --ok:#5cc49a;--ok-soft:#12362b;--warn:#e0ac52;--warn-soft:#33280f;--bad:#e88b8b;--bad-soft:#3a1e1e;
+    --line:#26414f;--shadow:0 12px 28px -14px rgba(0,0,0,.6)
+  }
+  .topbar{background:#0a2c3a}
+  .bottom-nav{background:rgba(20,35,45,.98)}
+  .hero,.next-step{background:#0f3e50}
+  .hero p{color:#c4dde5}
+  .next-cta{background:var(--brand);color:#08222d;border-color:var(--brand)}
+  .next-step.danger{background:#4a1f24}
+  .next-step.ok{background:#123528}
+  .upload-zone .upload-icon{background:var(--brand);color:#08222d}
+  .grid .card-icon{background:var(--tint);border-color:var(--accent);color:var(--brand)}
+  .lang-opt.on{background:#0c1720;color:var(--brand)}
+}
+
+
+/* --- Nachschärfung: Aktionsraster, Optionen, Quellen --------------------- */
+.brand-btn small{max-width:none}
+
+/* Zweispaltige Sekundäraktionen statt Buttonstapel */
+.case-summary-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.case-summary-actions>*,.case-summary-actions>button{width:100%;min-width:0;display:flex;align-items:center;gap:9px;
+  justify-content:flex-start;text-align:left;min-height:52px;padding:12px 13px;line-height:1.25;
+  overflow-wrap:anywhere}
+.case-summary-actions>*>svg{flex:0 0 auto}
+.case-summary-actions>.primary-btn{grid-column:1/-1;justify-content:center;min-height:50px}
+.case-summary-actions>.danger-btn{grid-column:1/-1}
+.toolbar>.secondary-btn,.toolbar>.ghost-btn{flex:1 1 44%}
+.capture-actions>.secondary-btn,.capture-actions>.danger-btn{flex:1 1 100%}
+
+/* Auswahloptionen mit sichtbarer Markierung */
+.option-grid{grid-template-columns:1fr;gap:8px}
+.option-btn{display:grid;grid-template-columns:21px 1fr;column-gap:12px;align-items:start;
+  padding:13px 14px;min-height:60px;border-radius:var(--radius)}
+.option-btn::before{content:"";width:21px;height:21px;border-radius:50%;
+  border:1.8px solid #b4c4ce;margin-top:1px;background:var(--surface)}
+.option-btn.selected{box-shadow:inset 0 0 0 1px var(--brand);border-color:var(--brand);background:var(--tint)}
+.option-btn.selected::before{border-color:var(--brand);background:var(--brand);
+  box-shadow:inset 0 0 0 3.5px var(--surface)}
+.option-btn strong{grid-column:2;min-width:0;font-size:.97rem}
+.option-btn small{grid-column:2;min-width:0;font-size:.83rem}
+
+/* Amtliche Quellen: aufklappbare Zeile statt Linkliste */
+.sources{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  margin-top:22px;overflow:hidden}
+.sources>summary{display:flex;align-items:center;gap:13px;padding:13px 14px;min-height:58px;
+  cursor:pointer;list-style:none}
+.sources>summary::-webkit-details-marker{display:none}
+.sources>summary::after{content:"";margin-left:auto;width:7px;height:7px;flex:0 0 auto;
+  border-right:2px solid #9ab0be;border-bottom:2px solid #9ab0be;
+  transform:translateY(-3px) rotate(45deg);transition:transform .15s}
+.sources[open]>summary::after{transform:translateY(1px) rotate(-135deg)}
+.sources-icon{width:42px;height:42px;flex:0 0 auto;border-radius:12px;background:var(--tint);
+  border:1px solid var(--accent);color:var(--brand);display:grid;place-items:center;font-size:1rem}
+.sources-icon .ic{width:22px;height:22px}
+.sources-text strong{display:block;font-size:.98rem}
+.sources-text small{display:block;color:var(--muted);font-size:.83rem;margin-top:2px}
+.sources .source-list{border:0;border-top:1px solid var(--line);border-radius:0}
+.case-summary-actions>.ghost-btn{border:1px solid var(--line);background:var(--surface)}
+.phase{min-width:0}
+.phase>small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+

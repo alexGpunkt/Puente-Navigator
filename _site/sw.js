@@ -1,13 +1,15 @@
-/* Puente Service Worker v0.7.0
+/* Puente Service Worker v0.9.0
    - Navigationen: network-first, Offline-Fallback auf index.html.
    - Eigene statische Dateien: stale-while-revalidate.
    - Same-origin Antworten erhalten COOP/COEP, damit lokales whisper.cpp/WASM
      mit SharedArrayBuffer auf statischem Hosting (z. B. GitHub Pages) laeuft.
    - Externe Urspruenge werden nicht vom Service Worker gecacht. */
-const CACHE = "puente-v0.7.0";
+const CACHE = "puente-v0.9.0";
 const ASSETS = [
   "./", "index.html", "styles.css", "storage.js", "voice.js", "capture.js",
-  "data.js", "features.js", "app.js", "manifest.webmanifest",
+  "data.js", "features.js", "app.js", "icons.js", "manifest.webmanifest",
+  "fonts/fira-sans-latin-400-normal.woff2", "fonts/fira-sans-latin-500-normal.woff2",
+  "fonts/fira-sans-latin-600-normal.woff2", "fonts/fira-sans-latin-700-normal.woff2",
   "vendor/pdf-lib.min.js", "vendor/qrcode.min.js", "vendor/jszip.min.js",
   "vendor/pdfjs/pdf.min.js", "vendor/pdfjs/pdf.worker.min.js",
   "vendor/tesseract/tesseract.min.js", "vendor/tesseract/worker.min.js",
@@ -56,3 +58,4 @@ self.addEventListener("fetch", e => {
     return ciso||network;
   }));
 });
+

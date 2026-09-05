@@ -1,8 +1,22 @@
-# Puente – Prototyp v0.7.0
+# Puente – Prototyp v0.9.0
 
 Mobile-first, zweisprachige PWA für die Vorbereitung deutscher Behördenanträge. Puente arbeitet ohne eigenes Backend und verarbeitet Dokumente, Kartenfotos und Audio möglichst vollständig lokal im Browser.
 
-## Neu in v0.7.0
+## Neu in v0.9.0 – Layout und visuelle Identität
+
+Vollständige Überarbeitung der Oberfläche, damit die App wie ein fertiges Produkt und nicht wie ein Prototyp wirkt.
+
+- **Farbwelt Petrol.** `--brand:#0b4a5e` auf kühlem Grau-Blau (`--bg:#edf1f4`); Semantikfarben (grün/ocker/rot) bleiben Status vorbehalten.
+- **Dunkler Marken-Header.** Feste Kopfzeile in Petrol mit Sprachumschalter ES/DE als Segmented Control statt Chip.
+- **Fira Sans, lokal eingebunden.** Vier Schnitte als woff2 unter `fonts/`, im Service Worker vorgecacht – keine externen Font-CDNs, offlinefähig.
+- **Icon-System statt Emojis.** `icons.js` ersetzt beim Rendern alle Emoji-Zeichen durch einen einheitlichen SVG-Strichsatz. Datenmodell und Views liefern weiterhin Emojis, dadurch bleibt `data.js` unverändert.
+- **Listenzeilen statt Kachelraster.** Startseite, Fristen und „Mehr" nutzen Zeilen mit Icon-Kachel, Titel, Untertitel und Status – tragfähiger für lange deutsche Komposita.
+- **Eine Hierarchiestufe pro Bildschirm.** Nur ein erhabenes Element je Ansicht; amtliche Quellen liegen in einer aufklappbaren Zeile statt als Linkliste.
+- **Fehlerbehebungen:** Optionstexte im Assistenten brachen wortweise um (Grid-Spalte), Aktionsschaltflächen im Fallbereich waren zentriert und liefen bei 320 px über, Phasenleiste überlief bei 320 px.
+
+Tests 00–06 laufen fehlerfrei, inklusive Überlaufprüfung bei 390 px und 320 px.
+
+## Aus v0.7.0
 
 ### Karten fotografieren → Formularfelder vorbereiten
 Im Fall-Arbeitsbereich gibt es einen eigenen Modus für Bank-/Debit-/Kreditkarten und Gesundheitskarten. Das Foto wird lokal mit Tesseract.js ausgewertet. Erkannte, für Anträge sinnvolle Angaben werden den passenden Formularfeldern zugeordnet, z. B.:
@@ -105,3 +119,4 @@ OCR und Spracherkennung können falsche Werte erzeugen. Automatische Zuordnung b
 ## Deployment
 
 Der produktive Stand wird über GitHub Actions aus `main` getestet und anschließend über GitHub Pages veröffentlicht.
+

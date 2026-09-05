@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#12385b" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0d1b26" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#0b4a5e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a2c3a" media="(prefers-color-scheme: dark)">
   <meta name="description" content="Navegador bilingüe de trámites para personas hispanohablantes en Alemania.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,6 +16,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="preload" href="fonts/fira-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/fira-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <script>
     // Whisper/WASM mit Threads benoetigt COOP/COEP. GitHub Pages kann diese
@@ -38,12 +40,12 @@
 
   <header class="topbar">
     <button id="homeBtn" class="brand-btn" type="button" aria-label="Inicio">
-      <span class="brand-mark" aria-hidden="true">P</span>
-      <span class="brand-text"><strong>Puente</strong><small id="brandSubtitle">Ayuda con trámites en Alemania</small></span>
+      <span class="brand-mark" aria-hidden="true"><span class="ic"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 15.5h18M6.5 15.5V9.8m11 5.7V9.8M3 11.6c3.6-3 5.6-4.6 9-4.6s5.4 1.6 9 4.6"/></svg></span></span>
+      <span class="brand-text"><strong>Puente</strong><small id="brandSubtitle">Trámites en Alemania</small></span>
     </button>
     <div class="top-actions">
       <button id="readBtn" class="icon-btn" type="button" aria-pressed="false" aria-label="Vorlesen / Leer en voz alta" hidden><span aria-hidden="true">🔊</span></button>
-      <button id="langBtn" class="chip" type="button" aria-label="Sprache wechseln / Cambiar idioma">DE</button>
+      <button id="langBtn" class="lang-switch" type="button" aria-label="Sprache wechseln / Cambiar idioma"><span class="lang-opt" data-lang="es">ES</span><span class="lang-opt" data-lang="de">DE</span></button>
       <button id="settingsBtn" class="icon-btn" type="button" aria-label="Einstellungen / Ajustes"><span aria-hidden="true">⚙️</span></button>
     </div>
   </header>
@@ -71,6 +73,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
+  <script src="icons.js"></script>
   <script src="storage.js"></script>
   <script src="voice.js"></script>
   <script src="capture.js"></script>
@@ -79,3 +82,4 @@
   <script src="app.js"></script>
 </body>
 </html>
+

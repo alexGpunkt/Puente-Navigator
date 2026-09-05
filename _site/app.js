@@ -185,8 +185,8 @@
 
   function renderInner(){
     document.documentElement.lang = state.lang;
-    $("#langBtn").textContent = state.lang==="es" ? "DE" : "ES";
-    $("#brandSubtitle").textContent = state.lang==="es" ? "Ayuda con trámites en Alemania" : "Hilfe bei Behördenwegen in Deutschland";
+    $$("#langBtn .lang-opt").forEach(o=>o.classList.toggle("on", o.dataset.lang===state.lang));
+    $("#brandSubtitle").textContent = state.lang==="es" ? "Trámites en Alemania" : "Behördenwege in Deutschland";
     if($("#caseNavLabel")) $("#caseNavLabel").textContent = state.lang==="es" ? "Caso" : "Fall";
     $$('[data-i18n]').forEach(el => el.textContent = tr(el.dataset.i18n));
     // Unterseiten einem Haupt-Tab zuordnen, damit die untere Navigation nie leer wirkt.
@@ -219,6 +219,7 @@
     if(storageAlert) app.insertAdjacentHTML("afterbegin", storageBanner());
     const rb=$("#readBtn"); if(rb) rb.hidden = !(VOICE && VOICE.canSpeak());
     bindViewEvents();
+    if(window.ICONS) ICONS.decorate(document.body);
     announceRoute();
   }
 
@@ -283,7 +284,7 @@
         <div class="next-icon" aria-hidden="true">${step.icon}</div>
         <h1>${esc(step.title)}</h1>
         <p>${esc(step.text)}</p>
-        <button class="primary-btn next-cta" data-go="${step.route}"${step.service?` data-service-hint="${step.service}"`:""}>${esc(step.cta)} →</button>
+        <button class="primary-btn next-cta" data-go="${step.route}"${step.service?` data-service-hint="${step.service}"`:""}>${esc(step.cta)}</button>
       </section>
 
       ${hasCase?phaseBar():""}
@@ -1399,7 +1400,7 @@
       const missing=[];
       for(const d of evidence){
         const live=liveFiles.get(d.id);if(!live?.file){missing.push(`${d.exhibit} · ${d.name}`);continue;}
-        const safe=String(d.name||"dokument").replace(/[\\/:*?\"<>|]+/g,"_");
+        const safe=String(d.name||"dokument").replace(/[\\/:*?"<>|]+/g,"_");
         zip.file(`Nachweise/${d.exhibit}_${safe}`,live.file);
       }
       const reqs=dossierRequirements(dossierService());
@@ -1465,8 +1466,16 @@
   }
 
   function sourcesBlock(){
-    return `<div class="section-title"><div><h2>${tr("sources")}</h2></div></div><div class="source-list">
-      ${APP_DATA.sources.map(s=>`<a href="${s.url}" target="_blank" rel="noopener">${esc(tx(s.label))} ↗</a>`).join("")}</div>`;
+    const n=APP_DATA.sources.length;
+    return `<details class="sources">
+      <summary>
+        <span class="sources-icon" aria-hidden="true">📄</span>
+        <span class="sources-text"><strong>${tr("sources")}</strong>
+          <small>${n} ${L("enlaces a autoridades alemanas","Links zu deutschen Beh\u00f6rden")}</small></span>
+      </summary>
+      <div class="source-list">
+      ${APP_DATA.sources.map(s=>`<a href="${s.url}" target="_blank" rel="noopener">${esc(tx(s.label))} ↗</a>`).join("")}</div>
+    </details>`;
   }
 
   function openRecovery(id){
@@ -1825,3 +1834,4 @@ Vielen Dank.`;
     window.addEventListener("pagehide",()=>{ try{ Storage.flush(true); }catch(_){} });
   })();
 })();
+

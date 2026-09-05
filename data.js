@@ -1,6 +1,6 @@
 
 const APP_DATA = {
-  meta:{updated:"2026-09-03",version:"0.7.0"},
+  meta:{updated:"2026-09-05",version:"0.9.0"},
   ui:{
     es:{
       navHome:"Inicio",navAssistant:"Asistente",navCase:"Caso",navDeadlines:"Plazos",navMore:"Más",navAdvice:"Asesoría",navDocs:"Documentos",navLost:"Perdidos",navProgress:"Progreso",
@@ -2111,3 +2111,4 @@ APP_DATA.documentTypes.splice(APP_DATA.documentTypes.length-1, 0, {
         "wird bewilligt","wird abgelehnt","aufhebung","erstattung","widerspruchsbescheid",
         "sozialgericht","festgesetzt","leistungen nach dem sgb"]
 });
+
