@@ -1,0 +1,305 @@
+    app.innerHTML=`
+      <div class="notice danger">
+        <strong>${t("Algo ha fallado en esta pantalla.","Auf diesem Bildschirm ist etwas schiefgelaufen.")}</strong>
+        <p>${t("Tus datos siguen guardados. Puedes volver al inicio y continuar.",
+               "Deine Daten sind weiterhin gespeichert. Du kannst zur Startseite zurück und weiterarbeiten.")}</p>
+        <div class="toolbar">
+          <button type="button" class="primary-btn" id="failHome">${t("Ir al inicio","Zur Startseite")}</button>
+          <button type="button" class="ghost-btn" id="failDetails">${t("Detalles técnicos","Technische Details")}</button>
+        </div>
+        <pre id="failPre" class="fail-pre" hidden>${esc(String(err&&err.stack||err))}</pre>
+      </div>`;
+    $("#failHome")?.addEventListener("click",()=>{ state.route="home"; saveState(); render(); });
+    $("#failDetails")?.addEventListener("click",()=>{ const p=$("#failPre"); if(p) p.hidden=!p.hidden; });
+  }
+
+  function renderInner(){
+    document.documentElement.lang = state.lang;
+    $$("#langBtn .lang-opt").forEach(o=>o.classList.toggle("on", o.dataset.lang===state.lang));
+    $("#brandSubtitle").textContent = state.lang==="es" ? "Trámites en Alemania" : "Behördenwege in Deutschland";
+    if($("#caseNavLabel")) $("#caseNavLabel").textContent = state.lang==="es" ? "Caso" : "Fall";
+    $$('[data-i18n]').forEach(el => el.textContent = tr(el.dataset.i18n));
+    // Unterseiten einem Haupt-Tab zuordnen, damit die untere Navigation nie leer wirkt.
+    const navGroup={service:"assistant",fields:"assistant",fill:"assistant",
+      dossier:"case",progress:"case",docs:"more",lost:"more",advice:"more",
+      settings:"more",outbox:"case",household:"case"}[state.route]||state.route;
+    $$(".nav-btn").forEach(b => {
+      const on=b.dataset.route===navGroup;
+      b.classList.toggle("active", on);
+      if(on) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
+    });
+
+    const app = $("#app");
+    if(state.route==="home") app.innerHTML = homeView();
+    else if(state.route==="assistant") app.innerHTML = assistantView();
+    else if(state.route==="service") app.innerHTML = serviceView(state.service);
+    else if(state.route==="fields") app.innerHTML = fieldsView(state.formService || state.service || "grundsicherung");
+    else if(state.route==="case") app.innerHTML = caseView();
+    else if(state.route==="dossier") app.innerHTML = dossierView();
+    else if(state.route==="docs") app.innerHTML = docsView();
+    else if(state.route==="lost") app.innerHTML = lostView();
+    else if(state.route==="progress") app.innerHTML = progressView();
+    else if(state.route==="deadlines") app.innerHTML = FEATURES ? FEATURES.deadlinesView() : homeView();
+    else if(state.route==="advice") app.innerHTML = FEATURES ? FEATURES.adviceView() : homeView();
+    else if(state.route==="fill") app.innerHTML = FEATURES ? FEATURES.fillView() : homeView();
+    else if(state.route==="outbox") app.innerHTML = FEATURES ? FEATURES.outboxView() : homeView();
+    else if(state.route==="household") app.innerHTML = FEATURES ? FEATURES.householdView() : homeView();
+    else if(state.route==="settings") app.innerHTML = settingsView();
+    else app.innerHTML = homeView();
+    if(storageAlert) app.insertAdjacentHTML("afterbegin", storageBanner());
+    const rb=$("#readBtn"); if(rb) rb.hidden = !(VOICE && VOICE.canSpeak());
+    bindViewEvents();
+    if(window.ICONS) ICONS.decorate(document.body);
+    announceRoute();
+  }
+
+  /** Leitet aus dem Zustand genau einen sinnvollen nächsten Schritt ab. */
+  function nextStep(){
+    const urgent=FEATURES?.openCount()||0;
+    if(urgent) return {icon:"⏳", route:"deadlines",
+      title:L("Hay un plazo cerca","Eine Frist läuft"),
+      text:L("Míralo antes que nada: un plazo vencido cuesta más que un formulario incompleto.",
+             "Zuerst ansehen: eine versäumte Frist kostet mehr als ein unvollständiger Antrag."),
+      cta:L("Ver plazos","Fristen ansehen"), tone:"danger"};
+
+    if(!Object.keys(state.profile||{}).length) return {icon:"🧭", route:"assistant",
+      title:L("Empezar por el asistente","Mit dem Assistenten beginnen"),
+      text:L("Diez preguntas breves ordenan el caso y muestran qué documentos hacen falta.",
+             "Zehn kurze Fragen ordnen den Fall und zeigen, welche Unterlagen gebraucht werden."),
+      cta:L("Empezar","Starten"), tone:"brand"};
+
+    const svc=dossierService();
+    const missing=dossierRequirements(svc).filter(r=>r.status!=="have");
+    if(missing.length){
+      const first=missing[0].doc;
+      return {icon:first?.icon||"📄", route:"service", service:svc,
+        title:L("Falta un documento","Es fehlt eine Unterlage"),
+        text:L(`Lo siguiente: ${tx(first?.title)||""}. Quedan ${missing.length} por reunir.`,
+               `Als Nächstes: ${tx(first?.title)||""}. Es fehlen noch ${missing.length}.`),
+        cta:L("Ver cómo conseguirlo","Beschaffungsweg ansehen"), tone:"brand"};
+    }
+    if(state.phase==="prepare") return {icon:"📑", route:"dossier",
+      title:L("El expediente está completo","Die Fallakte ist vollständig"),
+      text:L("Imprime el expediente, entrégalo y anota el envío para tener prueba.",
+             "Fallakte drucken, einreichen und die Sendung eintragen, damit es einen Beleg gibt."),
+      cta:L("Abrir expediente","Fallakte öffnen"), tone:"ok"};
+    return {icon:"📮", route:"outbox",
+      title:L("Solicitud entregada","Antrag ist raus"),
+      text:L("Anota la vía de entrega y espera la resolución. Cuando llegue, fotografíala en el área del caso.",
+             "Den Weg der Abgabe festhalten und auf den Bescheid warten. Wenn er kommt, im Fall-Arbeitsbereich fotografieren."),
+      cta:L("Libro de envíos","Postausgangsbuch"), tone:"ok"};
+  }
+
+  function phaseBar(){
+    const phases=[
+      {id:"prepare",  icon:"📋", label:L("Preparar","Vorbereiten")},
+      {id:"submitted",icon:"📮", label:L("Entregado","Eingereicht")},
+      {id:"decided",  icon:"⚖️", label:L("Resolución","Bescheid")}
+    ];
+    return `<div class="phase-bar" role="group" aria-label="${L("Fase del caso","Phase des Falls")}">
+      ${phases.map(p=>`<button type="button" class="phase ${p.id===state.phase?"active":""}" data-phase="${p.id}">
+        <span aria-hidden="true">${p.icon}</span><small>${esc(p.label)}</small></button>`).join("")}
+    </div>`;
+  }
+
+  function homeView(){
+    const step=nextStep();
+    const hasCase=Object.keys(state.profile||{}).length>0;
+    // Bereiche, die in der aktuellen Phase nichts beitragen, bleiben weg.
+    const showBescheid = state.phase!=="prepare";
+    const showOutbox   = state.phase!=="prepare" || (FEATURES?.outboxCount()||0)>0;
+
+    return `
+      <section class="hero next-step ${step.tone}">
+        <div class="next-icon" aria-hidden="true">${step.icon}</div>
+        <h1>${esc(step.title)}</h1>
+        <p>${esc(step.text)}</p>
+        <button class="primary-btn next-cta" data-go="${step.route}"${step.service?` data-service-hint="${step.service}"`:""}>${esc(step.cta)}</button>
+      </section>
+
+      ${hasCase?phaseBar():""}
+
+      <div class="section-title">
+        <div><h2>${tr("choose")}</h2></div>
+        <button type="button" class="ghost-btn" id="toggleAreas">${state.settings?.showAreas?L("Menos","Weniger"):L("Todas las áreas","Alle Bereiche")}</button>
+      </div>
+
+      <section class="grid">
+        ${serviceCard("grundsicherung")}
+        ${serviceCard("wohngeld")}
+        <article class="card clickable" data-go="case">
+          <div class="card-icon">📎</div>
+          <h3>${L("Caso y documentos","Fall & Dokumente")}</h3>
+          <p>${L("Fotografiar documentos y proponer datos.","Dokumente fotografieren und Angaben vorschlagen.")}</p>
+          <div class="meta">${docBadge()}</div>
+        </article>
+        <article class="card clickable" data-go="deadlines">
+          <div class="card-icon">⏳</div>
+          <h3>${L("Plazos","Fristen")}</h3>
+          <p>${L("Calcular, recordar y pasar al calendario.","Berechnen, erinnern, in den Kalender übernehmen.")}</p>
+          <div class="meta">${dueBadge()}</div>
+        </article>
+
+        ${state.settings?.showAreas?`
+        ${showOutbox?`<article class="card clickable" data-go="outbox">
+          <div class="card-icon">📮</div>
+          <h3>${L("Libro de envíos","Postausgangsbuch")}</h3>
+          <p>${L("Qué se entregó, cuándo y con qué prueba.","Was wann und mit welchem Beleg herausging.")}</p>
+        </article>`:""}
+        <article class="card clickable" data-go="advice">
+          <div class="card-icon">🤝</div>
+          <h3>${L("Asesoría personal","Persönliche Beratung")}</h3>
+          <p>${L("Servicios gratuitos y confidenciales.","Kostenlose, vertrauliche Stellen.")}</p>
+        </article>
+        <article class="card clickable" data-go="docs">
+          <div class="card-icon">🔎</div><h3>${tr("docsTitle")}</h3><p>${tr("docsSub")}</p>
+        </article>
+        <article class="card clickable" data-go="lost">
+          <div class="card-icon">🔥</div><h3>${tr("lostTitle")}</h3><p>${tr("lostSub")}</p>
+        </article>
+        ${showBescheid?`<article class="card clickable" data-go="case">
+          <div class="card-icon">⚖️</div>
+          <h3>${L("Analizar resolución","Bescheid auswerten")}</h3>
+          <p>${L("Fotografía la resolución: Puente calcula el plazo de recurso.","Bescheid fotografieren: Puente berechnet die Widerspruchsfrist.")}</p>
+        </article>`:""}
+        `:""}
+      </section>
+
+      ${sourcesBlock()}
+      <p class="small">${tr("legalNote")} · v${APP_DATA.meta.version} · ${APP_DATA.meta.updated}</p>
+    `;
+  }
+
+  function docBadge(){
+    const n=docSession.docs.length;
+    return n?`<span class="badge ok">${n} ${L("documento(s)","Dokument(e)")}</span>`
+            :`<span class="badge">${L("vacío","leer")}</span>`;
+  }
+
+  function dueBadge(){
+    const c=FEATURES?.openCount()||0;
+    if(!c) return `<span class="badge">${L("sin plazos urgentes","keine dringenden Fristen")}</span>`;
+    return `<span class="badge bad">${c} ${L("plazo(s) en 14 días","Frist(en) in 14 Tagen")}</span>`;
+  }
+
+  function assistantView(){
+    if(state.assistantDone) return assistantResultView();
+    const qs = APP_DATA.assistantQuestions;
+    const i = Math.max(0, Math.min(state.assistantStep || 0, qs.length-1));
+    const q = qs[i];
+    const selected = state.profile[q.id];
+
+    return `
+      <div class="wizard-shell">
+        <div class="service-head">
+          <div class="big-icon">🧭</div>
+          <div>
+            <h1>${state.lang==="es"?"Asistente guiado":"Geführter Fall-Assistent"}</h1>
+            <p>${state.lang==="es"?"Solo preguntas de clasificación. No calcula automáticamente un derecho legal.":"Nur Einordnungsfragen. Es wird kein Rechtsanspruch automatisch berechnet."}</p>
+          </div>
+        </div>
+        <div class="wizard-progress">
+          ${qs.map((_,idx)=>`<div class="wizard-dot ${idx<i?"done":idx===i?"current":""}"></div>`).join("")}
+        </div>
+        <article class="question-card">
+          <div class="small">${state.lang==="es"?`Pregunta ${i+1} de ${qs.length}`:`Frage ${i+1} von ${qs.length}`}</div>
+          <h2>${tx(q.title)}</h2>
+          <p>${tx(q.help)}</p>
+          <div class="option-grid">
+            ${q.options.map(opt=>assistantOption(q,opt,selected)).join("")}
+          </div>
+          <div class="wizard-actions">
+            <button class="ghost-btn" id="assistantBack" ${i===0?"disabled":""}>← ${state.lang==="es"?"Atrás":"Zurück"}</button>
+            <button class="primary-btn" id="assistantNext">${i===qs.length-1 ? (state.lang==="es"?"Ver resultado":"Ergebnis anzeigen") : (state.lang==="es"?"Siguiente":"Weiter")} →</button>
+          </div>
+        </article>
+        <div class="privacy-session">🔒 ${state.lang==="es"
+          ?"Estas respuestas de clasificación se guardan solo en este navegador. Los valores personales que se escriban más tarde en la preparación del formulario se guardan solo durante la sesión."
+          :"Diese Einordnungsantworten werden nur in diesem Browser gespeichert. Persönliche Werte in der späteren Formularvorbereitung werden nur für die Sitzung gespeichert."}</div>
+      </div>
+    `;
+  }
+
+  function assistantOption(q,opt,selected){
+    const isSelected = q.type==="multi" ? arr(selected).includes(opt.value) : selected===opt.value;
+    return `<button type="button" class="option-btn ${isSelected?"selected":""}" data-qid="${q.id}" data-qtype="${q.type}" data-opt="${opt.value}">
+      <strong>${tx(opt.label)}</strong>${opt.desc?`<small>${tx(opt.desc)}</small>`:""}
+    </button>`;
+  }
+
+  function assistantResultView(){
+    const p = state.profile;
+    const rec = makeRecommendations(p);
+    const preferred = rec.preferred || (p.target && p.target!=="unknown" ? p.target : "grundsicherung");
+    const annexes = preferred==="grundsicherung" ? getAnnexes(p) : [];
+    const relevant = getRelevantRequirements(preferred);
+
+    return `
+      <div class="wizard-shell">
+        <div class="result-hero">
+          <div class="result-score">
+            <div class="score-icon">🧭</div>
+            <div>
+              <h2>${state.lang==="es"?"Resultado de orientación":"Orientierungsergebnis"}</h2>
+              <p>${state.lang==="es"?"La app organiza el siguiente paso; la decisión final corresponde a la autoridad competente.":"Die App strukturiert den nächsten Schritt; die endgültige Entscheidung trifft die zuständige Behörde."}</p>
+            </div>
+          </div>
+        </div>
+
+        ${rec.blocks.map(b=>`<div class="notice recommendation ${b.level||""}"><strong>${b.icon||"ℹ️"} ${tx(b.title)}:</strong> ${tx(b.text)}</div>`).join("")}
+
+        <div class="section-title"><div><h2>${state.lang==="es"?"Ruta preparada":"Vorbereiteter Weg"}</h2></div></div>
+        <section class="grid">
+          <article class="card">
+            <div class="card-icon">${APP_DATA.services[preferred]?.icon||"📋"}</div>
+            <h3>${APP_DATA.services[preferred]?tx(APP_DATA.services[preferred].title):(state.lang==="es"?"Consulta especializada":"Fachberatung")}</h3>
+            <p>${APP_DATA.services[preferred]?tx(APP_DATA.services[preferred].subtitle):(state.lang==="es"?"La situación queda fuera del alcance principal de este prototipo.":"Die Situation liegt außerhalb des Kernbereichs dieses Prototyps.")}</p>
+            ${APP_DATA.services[preferred]?`<div class="toolbar">
+              <button class="secondary-btn" data-service="${preferred}">📂 ${state.lang==="es"?"Checklist personal":"Personalisierte Checkliste"}</button>
+              <button class="primary-btn" data-fields="${preferred}">📝 ${state.lang==="es"?"Preparar formulario":"Formular vorbereiten"}</button>
+              <button class="secondary-btn" data-go="case">📎 ${state.lang==="es"?"Añadir documentos":"Dokumente hinzufügen"}</button>
+            </div>`:""}
+          </article>
+          <article class="card">
+            <div class="card-icon">📎</div>
+            <h3>${state.lang==="es"?"Documentos relevantes":"Relevante Unterlagen"}</h3>
+            <p>${relevant.length} ${state.lang==="es"?"grupos de documentos según las respuestas.":"Unterlagengruppen nach den Antworten."}</p>
+            <div class="meta">${relevant.slice(0,6).map(([id])=>`<span class="badge">${APP_DATA.documents[id]?.icon||"📄"} ${esc(tx(APP_DATA.documents[id]?.title)||id)}</span>`).join("")}</div>
+          </article>
+        </section>
+
+        ${preferred==="grundsicherung" ? `
+          <div class="section-title"><div><h2>${state.lang==="es"?"Anexos probables del Jobcenter":"Voraussichtlich relevante Jobcenter-Anlagen"}</h2></div></div>
+          <div class="attachment-list">
+            ${annexes.map(a=>`<span class="attachment ${a.conditional?"":"required"}">${a.name}${a.conditional?" · ?":""}</span>`).join("")}
+          </div>
+          <p class="rule-note">${state.lang==="es"
+            ?"VM y EK forman parte de la comprobación básica; otros anexos se activan por vivienda, composición del hogar y situaciones especiales."
+            :"VM und EK gehören zur Grundprüfung; weitere Anlagen werden durch Wohnsituation, Haushaltskonstellation und besondere Lebenslagen aktiviert."}</p>
+        `:""}
+
+        <div class="toolbar">
+          <button class="ghost-btn" id="assistantEdit">← ${state.lang==="es"?"Cambiar respuestas":"Antworten ändern"}</button>
+          <button class="danger-btn" id="caseReset">🗑️ ${state.lang==="es"?"Borrar caso":"Fall löschen"}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function makeRecommendations(p){
+    const blocks=[];
+    let preferred = p.target && p.target!=="unknown" ? p.target : null;
+
+    if(p.workability==="no"){
+      blocks.push({
+        icon:"⚠️",level:"warn",
+        title:{es:"Jobcenter no es una conclusión automática",de:"Jobcenter nicht automatisch passend"},
+        text:{es:"Si la persona no puede trabajar al menos 3 horas diarias, conviene aclarar primero si corresponde Sozialamt/Grundsicherung SGB XII u otra prestación.",de:"Wenn die Person nicht mindestens 3 Stunden täglich arbeiten kann, sollte zuerst geklärt werden, ob Sozialamt/Grundsicherung nach SGB XII oder eine andere Leistung zuständig ist."}
+      });
+      if(!preferred) preferred = p.housing==="rent" ? "wohngeld" : "grundsicherung";
+    }
+
+    if(["sgb2","sgb12","asyl"].includes(p.housing_transfer)){
+      blocks.push({
+        icon:"🏠",level:"warn",
+        title:{es:"Wohngeld puede estar excluido",de:"Wohngeld kann ausgeschlossen sein"},
