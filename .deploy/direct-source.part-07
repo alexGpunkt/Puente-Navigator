@@ -1,0 +1,277 @@
+    const address=near(["Anschrift","Adresse","Dirección","Address"],/([^\n]{6,90})/i);if(address)push("streetAddress",address,.58);
+    const bd=near(["Geburtsdatum","Fecha de nacimiento","Date of birth","NACIMIENTO"],/(\d{1,2}[.\/ -]\d{1,2}[.\/ -]\d{2,4})/i);
+    if(bd)push("birthDate",bd.replace(/[\/ -]/g,"."),.82);
+    const bp=near(["Geburtsort","Lugar de nacimiento","Lugar de nacimiento /","LUGAR DE NACIMIENTO"],/([A-ZÁÉÍÓÚÑÄÖÜ][A-Za-zÁÉÍÓÚÑáéíóúñÄÖÜäöüß -]{2,35})/i);
+    if(bp)push("birthPlace",bp,.62);
+    const national=near(["Staatsangehörigkeit","NACIONALIDAD","Nacionalidad","Nationality"],/([A-ZÁÉÍÓÚÑÄÖÜ]{2,20})/i);
+    if(national)push("nationality",national,.65);
+    const funds=["AOK","BARMER","DAK","TK","Techniker Krankenkasse","KKH","Kaufmännische Krankenkasse","hkk","IKK classic","HEK","SBK","BKK VBU","mkk"];
+    const fund=funds.find(x=>raw.toLowerCase().includes(x.toLowerCase()));if(fund)push("healthFund",fund,.92);
+    const hv=near(["Versichertennummer","Versicherungsnummer"],/([A-Z][0-9]{9})/i);if(hv)push("healthInsuranceNo",hv.toUpperCase(),.75);
+    const area=near(["Wohnfläche","Wohnflaeche","superficie"],/(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:m²|m2|qm)/i);if(area)push("livingArea",area.replace(".",",")+" m²",.92);
+    const money=(labels,key,confidence=.9)=>{const v=near(labels,/(?:€|EUR)?\s*(\d{1,4}(?:[. ]\d{3})*,\d{2})\s*(?:€|EUR)?/i);if(v)push(key,v.replace(/ /g,"")+" €",confidence)};
+    money(["Nettokaltmiete","Grundmiete"],"rentCold");money(["Betriebskostenvorauszahlung","Betriebskosten","Nebenkosten"],"rentOperating");money(["Heizkostenvorauszahlung","Heizkosten"],"rentHeating");money(["Mietzins \\(gesamt\\)","Gesamtmiete","monatliche Gesamtmiete"],"rentTotal");
+    money(["Brutto","Gesamtbrutto","Bruttolohn"],"grossIncome",.72);money(["Netto","Auszahlungsbetrag","Nettoverdienst"],"netIncome",.7);
+    if(docType==="alg1_notice"||docType==="previous_benefits")money(["Arbeitslosengeld","Leistungsbetrag","monatlicher Zahlbetrag","Zahlbetrag"],"benefitAmount",.68);
+    // "beginnt am" ist zu generisch fuer andere Dokumente (z. B. Lohnabrechnungen)
+    const cstartLabels=docType==="rental_contract"
+      ? ["Mietverhältnis beginnt","Mietverhaeltnis beginnt","Mietbeginn","beginnt am"]
+      : ["Mietverhältnis beginnt","Mietverhaeltnis beginnt","Mietbeginn"];
+    const cstart=near(cstartLabels,/(\d{1,2}[.]\d{1,2}[.]\d{4})/i);if(cstart)push("contractStart",cstart,.72);
+    const estart=near(["Arbeitsverhältnis beginnt","Arbeitsverhaeltnis beginnt"],/(\d{1,2}[.]\d{1,2}[.]\d{4})/i);if(estart)push("employmentStart",estart,.78);
+    const eend=near(["Arbeitsverhältnis wird bis","endet zum","Beschäftigungsende"],/(\d{1,2}[.]\d{1,2}[.]\d{4})/i);if(eend)push("employmentEnd",eend,.75);
+    return out;
+  }
+
+  function autoMarkDocument(doc){
+    const primary=doc.type;
+    if(APP_DATA.documents[primary] && (doc.typeConfidence||0)>=0.45)state.statuses[primary]="have";
+    if(primary==="alg1_notice")state.statuses["income_proof"]="have";
+    if(["wohngeld_notice","previous_benefits","notice_decision"].includes(primary))state.statuses["previous_benefits"]="have";
+    for(const f of doc.facts||[]){
+      if(f.key==="taxId")state.statuses.tax_id="have";
+      if(f.key==="rvNumber")state.statuses.social_insurance="have";
+      if(f.key==="iban")state.statuses.iban="have";
+      if(f.key==="healthFund"||f.key==="healthInsuranceNo")state.statuses.health_insurance="have";
+      if(["rentCold","rentOperating","rentHeating","rentTotal","livingArea"].includes(f.key))state.statuses.rental_contract="have";
+      if(f.key==="rentHeating")state.statuses.heating_costs="have";
+    }
+  }
+
+  function approveFact(docId,idx,inputValue){
+    const doc=docSession.docs.find(x=>x.id===docId), f=doc?.facts?.[idx];if(!f)return;
+    const value=String(inputValue??f.value).trim();if(!value)return;
+    docSession.approvedFacts[f.key]={value,source:doc.name,docId};
+    delete docSession.ignoredFacts[`${docId}:${f.key}`];
+    transferFactToForms(f.key,value);
+    autoMarkDocument({...doc,facts:[{...f,value}]});
+    saveDocSession();saveSession();saveState();render();
+  }
+
+  function approveSafeFacts(docId){
+    const doc=docSession.docs.find(x=>x.id===docId);
+    if(!doc)return;
+    let count=0;
+    for(const f of doc.facts||[]){
+      if((f.confidence||0)<.75)continue;
+      if(!(APP_DATA.factToForm[f.key]||[]).length)continue;
+      if((docSession.ignoredFacts||{})[`${docId}:${f.key}`])continue;
+      const value=String(f.value||"").trim();if(!value)continue;
+      docSession.approvedFacts[f.key]={value,source:doc.name,docId};
+      delete docSession.ignoredFacts[`${docId}:${f.key}`];
+      transferFactToForms(f.key,value);
+      count++;
+    }
+    if(count){
+      autoMarkDocument(doc);saveDocSession();saveSession();saveState();render();
+      toast(L(`${count} dato(s) transferido(s). Revisa los formularios antes de enviarlos.`,`${count} Angabe(n) übernommen. Bitte Formulare vor dem Absenden prüfen.`));
+    }else toast(L("No hay propuestas seguras vinculadas a formularios.","Keine sicheren, mit Formularen verknüpften Vorschläge vorhanden."));
+  }
+
+  function transferFactToForms(key,value,opts={}){
+    const links=APP_DATA.factToForm[key]||[];let changed=0;
+    for(const l of links){
+      const fk=`${l.form}:${l.no}`;
+      if(opts.onlyEmpty && String(formValues[fk]||"").trim())continue;
+      if(["rentCold","rentOperating","rentHeating","rentTotal"].includes(key) && l.form==="KDU" && l.no==="20"){
+        const labels={rentCold:"Kaltmiete",rentOperating:"Betriebskosten",rentHeating:"Heizkosten",rentTotal:"Gesamtmiete"};
+        const current=formValues[fk]||"";const line=`${labels[key]}: ${value}`;
+        if(opts.onlyEmpty && current.trim())continue;
+        const parts=current.split(" | ").filter(x=>x && !x.startsWith(labels[key]+":"));parts.push(line);formValues[fk]=parts.join(" | ");changed++;
+      }else{formValues[fk]=value;changed++;}
+    }
+    return changed;
+  }
+
+  function autoFillCaptureDrafts(doc){
+    if(!doc || !["card","audio"].includes(doc.sourceKind))return 0;
+    let count=0;doc.autoDraftKeys=[];
+    for(const f of doc.facts||[]){
+      if((f.confidence||0)<.88)continue;
+      if(!(APP_DATA.factToForm[f.key]||[]).length)continue;
+      const value=String(f.value||"").trim();if(!value)continue;
+      const changed=transferFactToForms(f.key,value,{onlyEmpty:true});
+      if(changed){count++;doc.autoDraftKeys.push(f.key);}
+    }
+    doc.autoDraftCount=count;
+    if(count)saveSession();
+    return count;
+  }
+
+  let localAudioRecorder=null, localAudioStream=null, localAudioChunks=[], localAudioTimer=null;
+  async function startLocalAudioRecording(){
+    if(!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder==="undefined"){
+      toast(L("La grabación directa no está disponible en este navegador. Puedes elegir un archivo de audio.","Direkte Aufnahme wird von diesem Browser nicht unterstützt. Du kannst eine Audiodatei auswählen."));return;
+    }
+    try{
+      localAudioStream=await navigator.mediaDevices.getUserMedia({audio:true});
+      localAudioChunks=[];localAudioRecorder=new MediaRecorder(localAudioStream);
+      const start=Date.now();
+      localAudioRecorder.ondataavailable=e=>{if(e.data?.size)localAudioChunks.push(e.data)};
+      localAudioRecorder.onerror=e=>toast(L("Error de grabación.","Aufnahmefehler.")+" "+(e.error?.message||""));
+      localAudioRecorder.onstop=async()=>{
+        clearTimeout(localAudioTimer);localAudioTimer=null;
+        const type=localAudioRecorder?.mimeType||localAudioChunks[0]?.type||"audio/webm";
+        const blob=new Blob(localAudioChunks,{type});
+        localAudioStream?.getTracks().forEach(t=>t.stop());localAudioStream=null;localAudioRecorder=null;localAudioChunks=[];
+        const recBtn=$("#audioRecordBtn"), stopBtn=$("#audioStopBtn"), st=$("#audioRecordStatus");
+        if(recBtn)recBtn.disabled=false;if(stopBtn)stopBtn.disabled=true;
+        if(st)st.textContent=L("Grabación finalizada. Iniciando transcripción local…","Aufnahme beendet. Lokale Transkription startet …");
+        if(blob.size){
+          const ext=type.includes("ogg")?"ogg":type.includes("mp4")?"m4a":"webm";
+          const file=new File([blob],`puente-audio-${new Date().toISOString().replace(/[:.]/g,"-")}.${ext}`,{type});
+          await addAudioFile(file);
+        }
+      };
+      localAudioRecorder.start(1000);
+      const recBtn=$("#audioRecordBtn"), stopBtn=$("#audioStopBtn"), st=$("#audioRecordStatus");
+      if(recBtn)recBtn.disabled=true;if(stopBtn)stopBtn.disabled=false;
+      if(st)st.textContent=L("Grabando localmente… máximo 2 minutos.","Lokale Aufnahme läuft … maximal 2 Minuten.");
+      localAudioTimer=setTimeout(()=>stopLocalAudioRecording(),120000);
+    }catch(err){
+      localAudioStream?.getTracks().forEach(t=>t.stop());localAudioStream=null;localAudioRecorder=null;
+      toast(L("No se pudo abrir el micrófono: ","Mikrofon konnte nicht geöffnet werden: ")+(err?.message||String(err)));
+    }
+  }
+  function stopLocalAudioRecording(){
+    if(localAudioRecorder && localAudioRecorder.state!=="inactive")localAudioRecorder.stop();
+  }
+
+  async function addAudioFile(file){
+    if(!file)return;
+    if(file.size>100*1024*1024){toast(L("Audio demasiado grande (máx. 100 MB).","Audiodatei zu groß (max. 100 MB)."));return;}
+    if(!CAPTURE?.transcribeAudioFile){toast(L("Whisper local no está disponible.","Lokales Whisper ist nicht verfügbar."));return;}
+    const id=`a${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+    liveFiles.set(id,{file,sourceKind:"audio"});
+    const doc={id,name:file.name||L("Grabación","Audioaufnahme"),size:file.size||0,mime:file.type||"audio/*",type:"audio_note",typeConfidence:1,sourceKind:"audio",status:"analyzing",progress:.02,facts:[]};
+    docSession.docs.push(doc);saveDocSession();render();
+    try{
+      const transcript=await CAPTURE.transcribeAudioFile(file,{
+        lang:state.lang,onProgress:p=>updateDocProgress(id,.05+.9*p),
+        onStatus:st=>{doc.audioStatus=st;saveDocSession();}
+      });
+      const live=liveFiles.get(id);if(live)live.transcript=transcript;
+      const detected=detectTypeFromText(transcript);
+      doc.facts=extractFacts(transcript,detected.type);
+      for(const f of CAPTURE.extractSpokenFacts(transcript)||[]) if(!doc.facts.some(x=>x.key===f.key)) doc.facts.push(f);
+      const extra=FEATURES?.extractNoticeFacts(transcript);
+      if(extra) for(const f of extra.facts||[]) if(!doc.facts.some(x=>x.key===f.key))doc.facts.push(f);
+      autoFillCaptureDrafts(doc);doc.status="done";doc.progress=1;doc.error="";autoMarkDocument(doc);saveDocSession();saveState();render();
+      toast(L(doc.autoDraftCount?`Audio transcrito. ${doc.autoDraftCount} dato(s) seguro(s) se añadieron automáticamente como borrador; revísalos antes de enviar.`:"Audio transcrito localmente. Revisa y confirma los datos propuestos.",doc.autoDraftCount?`Audio lokal transkribiert. ${doc.autoDraftCount} sichere Angabe(n) wurden automatisch als Entwurf eingetragen; bitte vor dem Absenden prüfen.`:"Audio lokal transkribiert. Bitte Vorschläge prüfen und bestätigen."));
+    }catch(err){
+      doc.status="error";doc.progress=0;doc.error=L("No se pudo transcribir localmente: ","Lokale Transkription fehlgeschlagen: ")+(err?.message||String(err));saveDocSession();render();
+    }
+  }
+
+  function showTranscript(id){
+    const text=liveFiles.get(id)?.transcript||"";if(!text)return;
+    $("#modalTitle").textContent=L("🎙️ Transcripción temporal","🎙️ Temporäres Transkript");
+    $("#modalBody").innerHTML=`<div class="notice">${L("El texto solo está en la memoria de esta pestaña y no se guarda con el caso.","Der Text liegt nur im Arbeitsspeicher dieses Tabs und wird nicht mit dem Fall gespeichert.")}</div><textarea class="manual-text" rows="12" readonly>${esc(text)}</textarea>`;
+    $("#modal").showModal();
+  }
+
+  function removeCaseDoc(id){
+    const live=liveFiles.get(id);if(live?.url)URL.revokeObjectURL(live.url);liveFiles.delete(id);
+    docSession.docs=docSession.docs.filter(d=>d.id!==id);saveDocSession();render();
+  }
+
+  function analyzeManualText(){
+    const text=(document.querySelector("#manualDocText")?.value||"").trim();if(!text)return;
+    const id=`t${Date.now()}_${Math.random().toString(36).slice(2,7)}`,det=detectTypeFromText(text);
+    const doc={id,name:state.lang==="es"?"Texto pegado":"Eingefügter Text",size:text.length,mime:"text/plain",type:det.type,typeConfidence:det.confidence,status:"done",progress:1,facts:extractFacts(text,det.type)};
+    const extraManual=FEATURES?.extractNoticeFacts(text);
+    if(extraManual){
+      doc.noticeFlags=extraManual.flags;
+      for(const f of extraManual.facts) if(!doc.facts.some(x=>x.key===f.key)) doc.facts.push(f);
+    }
+    docSession.docs.push(doc);autoMarkDocument(doc);saveDocSession();saveState();document.querySelector("#modal")?.close();render();
+  }
+
+  function openManualTextModal(){
+    $("#modalTitle").textContent=state.lang==="es"?"⌨️ Analizar texto copiado":"⌨️ Kopierten Text analysieren";
+    $("#modalBody").innerHTML=`<p>${state.lang==="es"?"Pega aquí texto de un PDF, correo o documento. Se analiza localmente y el texto completo no se guarda.":"Hier Text aus PDF, E-Mail oder Dokument einfügen. Die Analyse erfolgt lokal; der vollständige Text wird nicht gespeichert."}</p><textarea id="manualDocText" class="manual-text" placeholder="..."></textarea><div class="toolbar"><button type="button" class="primary-btn" id="analyzeManualTextBtn">🔎 ${state.lang==="es"?"Analizar":"Analysieren"}</button></div>`;
+    $("#modal").showModal();$("#analyzeManualTextBtn").addEventListener("click",analyzeManualText);
+  }
+
+  function exportCaseSummary(){
+    const payload={version:APP_DATA.meta.version,exportedAt:new Date().toISOString(),profile:state.profile,statuses:state.statuses,approvedFacts:docSession.approvedFacts,documents:(docSession.docs||[]).map(({id,name,mime,type,typeConfidence,status,facts})=>({id,name,mime,type,typeConfidence,status,facts:facts?.map(({key,value,confidence})=>({key,value,confidence}))}))};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="puente-falluebersicht.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast(L("Resumen exportado.","Fallübersicht exportiert."));
+  }
+
+
+  function dossierService(){
+    const direct=state.formService||state.service;
+    if(direct && APP_DATA.services[direct]) return direct;
+    try{return makeRecommendations(state.profile||{}).preferred||"grundsicherung";}catch(_){return "grundsicherung";}
+  }
+
+  function dossierPersonName(){
+    const f=docSession.approvedFacts||{};
+    const first=(f.firstName?.value||f.firstName||formValues["HA:1"]||"").trim();
+    const last=(f.lastName?.value||f.lastName||formValues["HA:2"]||"").trim();
+    return `${first} ${last}`.trim() || (state.lang==="es"?"Persona solicitante":"Antragstellende Person");
+  }
+
+  function dossierRequirements(serviceId){
+    return getRelevantRequirements(serviceId).map(([id,kind])=>({id,kind,doc:APP_DATA.documents[id],status:state.statuses[id]||"open"}));
+  }
+
+  function dossierReadiness(serviceId){
+    const reqs=dossierRequirements(serviceId);
+    const required=reqs.filter(r=>r.kind==="required");
+    const denominator=required.length||reqs.length||1;
+    const have=(required.length?required:reqs).filter(r=>r.status==="have").length;
+    return {pct:Math.round(have/denominator*100),have,total:denominator,reqs};
+  }
+
+  function dossierFormRows(serviceId){
+    const map=APP_DATA.formMaps[serviceId];
+    if(!map)return [];
+    const rows=[];
+    for(const form of map.forms){
+      for(const field of form.fields){
+        const key=`${form.id}:${field.no}`;
+        const value=(formValues[key]||"").trim();
+        if(value)rows.push({form:form.id,no:field.no,title:tx(field.title),value});
+      }
+    }
+    return rows;
+  }
+
+  function dossierFacts(){
+    return Object.entries(docSession.approvedFacts||{}).map(([key,v])=>({
+      key,label:tx(APP_DATA.factLabels[key])||key,value:v?.value||v||"",source:v?.source||""
+    })).filter(x=>String(x.value).trim());
+  }
+
+  function evidenceSortRank(type){
+    const order=["id_document","registration","health_insurance","tax_id","social_insurance","rental_contract","bank_statements","income_proof","alg1_notice","previous_benefits","wohngeld_notice","other"];
+    const i=order.indexOf(type);return i<0?999:i;
+  }
+
+  function dossierEvidence(){
+    return [...(docSession.docs||[])].sort((a,b)=>evidenceSortRank(a.type)-evidenceSortRank(b.type)||String(a.name).localeCompare(String(b.name))).map((d,i)=>({...d,exhibit:`N${i+1}`}));
+  }
+
+  function profileSummaryRows(){
+    const qs=APP_DATA.assistantQuestions||[], rows=[];
+    for(const q of qs){
+      const val=state.profile?.[q.id];if(val==null || (Array.isArray(val)&&!val.length))continue;
+      const vals=Array.isArray(val)?val:[val];
+      const labels=vals.map(v=>tx(q.options.find(o=>o.value===v)?.label)||v).join(", ");
+      rows.push({q:tx(q.title),a:labels});
+    }
+    return rows;
+  }
+
+  function dossierView(){
+    const serviceId=dossierService(), service=APP_DATA.services[serviceId];
+    const ready=dossierReadiness(serviceId), reqs=ready.reqs;
+    const missing=reqs.filter(r=>r.status!=="have");
+    const facts=dossierFacts(), formRows=dossierFormRows(serviceId), evidence=dossierEvidence();
+    const profileRows=profileSummaryRows();
+    const annexes=serviceId==="grundsicherung"?getAnnexes(state.profile||{}):[];
+    const imageEvidence=evidence.filter(d=>liveFiles.get(d.id)?.preview);
+    const generated=new Intl.DateTimeFormat(state.lang==="es"?"es-ES":"de-DE",{dateStyle:"medium",timeStyle:"short"}).format(new Date());
+    const serviceName=service?tx(service.title):(serviceId||"");
