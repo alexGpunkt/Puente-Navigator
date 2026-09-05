@@ -1,0 +1,339 @@
+Sehr geehrte Damen und Herren,
+ich benötige ${d.title.de} für einen Behördenantrag. Meine bisherigen Unterlagen sind nicht mehr verfügbar. Bitte teilen Sie mir mit, wie ich eine Kopie beziehungsweise einen neuen Nachweis erhalten kann.
+
+Vielen Dank.`;
+    const text=`${es}\n\n--- DEUTSCH ---\n\n${de}`;
+    try{
+      await navigator.clipboard.writeText(text);
+      const btn=$("#makeRequest"); if(btn) btn.textContent=`✓ ${tr("copied")}`;
+      toast(tr("copied"));
+    }catch(_){
+      // Zwischenablage nur in sicheren Kontexten (https/localhost) verfuegbar.
+      const ta=document.createElement("textarea");
+      ta.className="manual-text"; ta.value=text; ta.readOnly=true;
+      $("#modalBody")?.appendChild(ta); ta.focus(); ta.select();
+      toast(L("Copia el texto manualmente.","Text bitte manuell kopieren."));
+    }
+  }
+
+  function openMoreSheet(){
+    const items=[
+      {route:"advice",  icon:"🤝", title:L("Dónde encontrar asesoría","Wo es Beratung gibt"), sub:L("Servicios gratuitos y confidenciales","Kostenlose, vertrauliche Stellen")},
+      {route:"docs",    icon:"🔎", title:tr("docsTitle"), sub:tr("docsSub")},
+      {route:"lost",    icon:"🔥", title:tr("lostTitle"), sub:tr("lostSub")},
+      ...(FEATURES?.hasPreparedValues()?[{route:"fill", icon:"🖊️", title:L("Rellenar el formulario oficial","Amtliches Formular ausfüllen"), sub:L("Escribir los valores en el PDF","Werte in das PDF schreiben")}]:[]),
+      {route:"dossier", icon:"📑", title:L("Expediente imprimible","Druckfertige Fallakte"), sub:L("Para llevar a la asesoría o a la oficina","Zum Mitnehmen in Beratung oder Amt")},
+      {route:"outbox",  icon:"📮", title:L("Libro de envíos","Postausgangsbuch"), sub:L("Qué se entregó, cuándo y cómo","Was wann und wie eingereicht wurde")},
+      {route:"household",icon:"👪", title:L("Comunidad de necesidad","Bedarfsgemeinschaft"), sub:L("Personas del hogar y sus anexos","Personen im Haushalt und ihre Anlagen")},
+      {route:"progress",icon:"✅", title:tr("currentStatus"), sub:tr("privacyShort")},
+      {route:"settings",icon:"⚙️", title:L("Ajustes y privacidad","Einstellungen und Datenschutz"), sub:L("Conservación de datos y voz","Datenhaltung und Sprache")}
+    ];
+    $("#modalTitle").textContent=tr("navMore");
+    $("#modalBody").innerHTML=`<div class="more-list">
+      ${items.map(i=>`<button type="button" class="more-item" data-more-route="${i.route}">
+        <span class="more-icon" aria-hidden="true">${i.icon}</span>
+        <span><strong>${esc(i.title)}</strong><small>${esc(i.sub)}</small></span>
+      </button>`).join("")}
+    </div>
+    `;
+    $("#modal").showModal();
+    $$(`[data-more-route]`).forEach(el=>el.addEventListener("click",()=>{
+      $("#modal").close(); setRoute(el.dataset.moreRoute);
+    }));
+
+  }
+
+  function showPrivacy(){
+    $("#modalTitle").textContent=tr("privacyTitle");
+    $("#modalBody").innerHTML=`<p>${tr("privacyBody")}</p>
+      <div class="notice">${state.lang==="es"
+        ?"v0.3 guarda la clasificación localmente. Documentos, OCR y datos extraídos permanecen solo en esta sesión y no se suben a Puente. Para OCR/PDF se descargan librerías del navegador desde CDN cuando se necesitan."
+        :"v0.3 speichert die Einordnung lokal. Dokumente, OCR und erkannte Angaben bleiben nur in dieser Sitzung und werden nicht an Puente hochgeladen. Für OCR/PDF werden bei Bedarf Browser-Bibliotheken von einem CDN geladen."}</div>
+      <div class="notice">${tr("legalNote")}</div>
+      <button type="button" class="danger-btn" id="modalReset">🗑️ ${tr("reset")}</button>`;
+    $("#modal").showModal();
+    $("#modalReset").addEventListener("click",resetAll);
+  }
+
+  async function resetAll(){
+    if(!confirm(tr("resetConfirm"))) return;
+    liveFiles.forEach(x=>{ if(x.url) URL.revokeObjectURL(x.url); });
+    liveFiles.clear();
+    releaseOcrWorker();
+    await Storage.clearAll();
+    bindStorageObjects({...defaultState, lang:state.lang});
+    if($("#modal").open) $("#modal").close();
+    render();
+  }
+
+  /** Verbindet die Arbeitsvariablen mit den Objekten im Speichermodul. */
+  function bindStorageObjects(initialState){
+    Storage.app.state = normalizeState(initialState ?? Storage.app.state);
+    state = Storage.app.state;
+    formValues = Storage.personal.formValues;
+    docSession = Storage.personal.docSession;
+    Storage.save("app"); Storage.save("personal");
+  }
+
+  // Zusatzmodule aus features.js. Der Kontext liefert lebende Referenzen,
+  // damit das Modul denselben Zustand sieht wie der Rest der App.
+  const FEATURES = (typeof window.PuenteFeatures === "function")
+    ? window.PuenteFeatures({
+        lang:()=>state.lang, esc, tx, L, toast, render, setRoute,
+        findDoc:id=>docSession.docs.find(d=>d.id===id),
+        services:()=>{
+          const p=state.profile||{};
+          const goal=p.goal;
+          if(goal==="grundsicherung") return ["grundsicherung"];
+          if(goal==="wohngeld") return ["wohngeld"];
+          return ["grundsicherung","wohngeld"];
+        },
+        formRows:()=>dossierFormRows(dossierService()),
+        facts:dossierFacts,
+        personName:dossierPersonName
+      })
+    : null;
+
+  const VOICE = (typeof window.PuenteVoice === "function")
+    ? window.PuenteVoice({
+        lang:()=>state.lang, esc, toast,
+        settings:()=>state.settings,
+        saveSettings:saveState,
+        onSpeakChange:on=>{ const b=$("#readBtn"); if(b){ b.classList.toggle("speaking",on); b.setAttribute("aria-pressed",String(on)); } }
+      })
+    : null;
+
+  function bindViewEvents(){
+    $$(`[data-service]`).forEach(el=>el.addEventListener("click",()=>setRoute("service",{service:el.dataset.service})));
+    $$(`[data-fields]`).forEach(el=>el.addEventListener("click",()=>{
+      state.activeForm=null;
+      setRoute("fields",{formService:el.dataset.fields});
+    }));
+    $$(`[data-go]`).forEach(el=>el.addEventListener("click",()=>setRoute(el.dataset.go)));
+    $$(`[data-recovery]`).forEach(el=>{
+      el.addEventListener("click",e=>{e.stopPropagation();openRecovery(el.dataset.recovery)});
+      if(el.getAttribute("role")==="button") el.addEventListener("keydown",e=>{
+        if(e.key==="Enter"||e.key===" "){e.preventDefault();openRecovery(el.dataset.recovery);}
+      });
+    });
+    $$(`[data-status-doc]`).forEach(el=>el.addEventListener("click",()=>{
+      const id=el.dataset.statusDoc,val=el.dataset.status;
+      state.statuses[id]=state.statuses[id]===val?"":val;
+      if(!state.statuses[id]) delete state.statuses[id];
+      saveState();render();
+    }));
+
+    $$(`[data-qid]`).forEach(el=>el.addEventListener("click",()=>{
+      const q=APP_DATA.assistantQuestions.find(x=>x.id===el.dataset.qid);
+      if(!q) return;
+      const value=el.dataset.opt;
+      if(q.type==="multi"){
+        let values=arr(state.profile[q.id]);
+        if((q.exclusive||[]).includes(value)){
+          values=values.includes(value)?[]:[value];
+        }else{
+          values=values.filter(x=>!(q.exclusive||[]).includes(x));
+          values=values.includes(value)?values.filter(x=>x!==value):[...values,value];
+        }
+        state.profile[q.id]=values;
+      }else{
+        state.profile[q.id]=value;
+      }
+      saveState();render();
+    }));
+    $("#assistantBack")?.addEventListener("click",()=>{
+      if(state.assistantStep>0){state.assistantStep--;saveState();render();}
+    });
+    $("#assistantNext")?.addEventListener("click",()=>{
+      const qs=APP_DATA.assistantQuestions, q=qs[state.assistantStep||0];
+      const answer=state.profile[q.id];
+      if(q.type==="single" && !answer){
+        toast(L("Selecciona una opción.","Bitte eine Option wählen."));
+        return;
+      }
+      if(q.type==="multi" && !Array.isArray(answer)) state.profile[q.id]=[];
+      if(state.assistantStep>=qs.length-1){state.assistantDone=true;}
+      else state.assistantStep++;
+      saveState();render();window.scrollTo({top:0});
+    });
+    $("#assistantEdit")?.addEventListener("click",()=>{
+      state.assistantDone=false;state.assistantStep=0;saveState();render();
+    });
+    $("#caseReset")?.addEventListener("click",resetAll);
+
+    $$(`[data-form-tab]`).forEach(el=>el.addEventListener("click",()=>{
+      state.activeForm=el.dataset.formTab;saveState();render();
+    }));
+    $("#toggleAllFields")?.addEventListener("click",()=>{
+      state.showAllFields=!state.showAllFields;saveState();render();
+    });
+    $$(`[data-form-key]`).forEach(el=>el.addEventListener("input",()=>{
+      formValues[el.dataset.formKey]=el.value;saveSession();
+    }));
+    $("#clearFormValues")?.addEventListener("click",()=>{
+      if(confirm(state.lang==="es"?"¿Borrar los valores escritos durante esta sesión?":"Sitzungswerte löschen?")){
+        formValues=Storage.replacePersonal("formValues",{});render();
+      }
+    });
+
+    // value zuruecksetzen, sonst loest dieselbe Datei kein change-Event aus.
+    const pickFiles=e=>{const f=e.target.files;const el=e.target;addCaseFiles(f).finally(()=>{try{el.value=""}catch(_){}})};
+    $("#caseFiles")?.addEventListener("change",pickFiles);
+    $("#cameraBtn")?.addEventListener("click",()=>$("#cameraInput")?.click());
+    $("#cameraInput")?.addEventListener("change",pickFiles);
+    $("#cardCameraBtn")?.addEventListener("click",()=>$("#cardCameraInput")?.click());
+    $("#cardCameraInput")?.addEventListener("change",e=>{const el=e.target;addCaseFiles(el.files,{sourceKind:"card"}).finally(()=>{try{el.value=""}catch(_){}});});
+    $("#audioPickBtn")?.addEventListener("click",()=>$("#audioInput")?.click());
+    $("#audioRecordBtn")?.addEventListener("click",startLocalAudioRecording);
+    $("#audioStopBtn")?.addEventListener("click",stopLocalAudioRecording);
+    $("#audioInput")?.addEventListener("change",e=>{const el=e.target,file=el.files?.[0];addAudioFile(file).finally(()=>{try{el.value=""}catch(_){}});});
+    const zone=$("#uploadZone");
+    if(zone){
+      ["dragenter","dragover"].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add("drag")}));
+      ["dragleave","drop"].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove("drag")}));
+      zone.addEventListener("drop",e=>addCaseFiles(e.dataTransfer.files));
+    }
+    $("#manualTextBtn")?.addEventListener("click",openManualTextModal);
+    $$('[data-analyze-doc]').forEach(el=>el.addEventListener("click",()=>analyzeCaseDocument(el.dataset.analyzeDoc)));
+    $$('[data-remove-doc]').forEach(el=>el.addEventListener("click",()=>removeCaseDoc(el.dataset.removeDoc)));
+    $$('[data-show-transcript]').forEach(el=>el.addEventListener("click",()=>showTranscript(el.dataset.showTranscript)));
+    $$('[data-approve-safe-doc]').forEach(el=>el.addEventListener("click",()=>approveSafeFacts(el.dataset.approveSafeDoc)));
+    $$('[data-doc-type]').forEach(el=>el.addEventListener("change",()=>{const d=docSession.docs.find(x=>x.id===el.dataset.docType);if(d){d.type=el.value;d.typeConfidence=1;autoMarkDocument(d);saveDocSession();saveState();render();}}));
+    $$('[data-approve-fact]').forEach(el=>el.addEventListener("click",()=>{const [id,idx]=el.dataset.approveFact.split(":");const inp=document.querySelector(`[data-fact-edit="${id}:${idx}"]`);approveFact(id,Number(idx),inp?.value);}));
+    $$('[data-ignore-fact]').forEach(el=>el.addEventListener("click",()=>{const [id,idx]=el.dataset.ignoreFact.split(":");const d=docSession.docs.find(x=>x.id===id),f=d?.facts?.[Number(idx)];if(f){docSession.ignoredFacts[`${id}:${f.key}`]=true;saveDocSession();render();}}));
+    $("#clearDocumentsBtn")?.addEventListener("click",()=>{if(confirm(state.lang==="es"?"¿Borrar documentos y datos extraídos de esta sesión?":"Sitzungsdokumente und erkannte Angaben löschen?")){liveFiles.forEach(x=>{if(x.url)URL.revokeObjectURL(x.url)});liveFiles.clear();docSession=Storage.replacePersonal("docSession",{docs:[],approvedFacts:{},ignoredFacts:{}});releaseOcrWorker();render();}});
+    $("#exportCaseBtn")?.addEventListener("click",exportCaseSummary);
+    $("#caseProgressBtn")?.addEventListener("click",()=>setRoute("progress"));
+
+    $("#printDossierBtn")?.addEventListener("click",()=>window.print());
+    $("#exportPackageBtn")?.addEventListener("click",exportSubmissionPackage);
+    $("#downloadDossierHtmlBtn")?.addEventListener("click",downloadDossierHtml);
+    $("#printBtn")?.addEventListener("click",()=>window.print());
+    $("#resetBtn")?.addEventListener("click",resetAll);
+    FEATURES?.bind();
+    FEATURES?.bindHousehold();
+
+    $$(`[data-abort-doc]`).forEach(el=>el.addEventListener("click",()=>abortAnalysis(el.dataset.abortDoc)));
+    $("#toggleAreas")?.addEventListener("click",()=>{
+      state.settings.showAreas=!state.settings.showAreas; saveState(); render();
+    });
+    $$(`[data-phase]`).forEach(el=>el.addEventListener("click",()=>{
+      state.phase=el.dataset.phase; saveState(); render();
+    }));
+    $$(`[data-service-hint]`).forEach(el=>el.addEventListener("click",()=>{
+      state.service=el.dataset.serviceHint; saveState();
+    }));
+
+    $("#storageAlertOk")?.addEventListener("click",()=>{ storageAlert=null; Storage.clearError(); render(); });
+
+    $$(`[data-mode]`).forEach(el=>el.addEventListener("click",async ()=>{
+      const next=el.dataset.mode;
+      if(next==="device" && !confirm(L(
+        "En este modo los datos permanecen en el dispositivo hasta que los borres. ¿Seguro que este equipo es tuyo?",
+        "In dieser Stufe bleiben die Daten auf dem Gerät, bis du sie löschst. Ist dies wirklich dein eigenes Gerät?"))) return;
+      await Storage.setMode(next);
+      formValues=Storage.personal.formValues;
+      docSession=Storage.personal.docSession;
+      FEATURES?.rebind();
+      toast(L("Modo de conservación cambiado.","Datenhaltung geändert."));
+      render();
+    }));
+    $("#voiceConsent")?.addEventListener("change",e=>{
+      state.settings.voiceConsent=e.target.checked; saveState();
+    });
+    $("#clearPersonalBtn")?.addEventListener("click",async ()=>{
+      if(!confirm(L("¿Borrar ahora todos los datos personales de este dispositivo?",
+                    "Alle persönlichen Daten auf diesem Gerät jetzt löschen?"))) return;
+      liveFiles.forEach(x=>{ if(x.url) URL.revokeObjectURL(x.url); });
+      liveFiles.clear(); releaseOcrWorker();
+      await Storage.clearPersonal();
+      formValues=Storage.personal.formValues;
+      docSession=Storage.personal.docSession;
+      FEATURES?.rebind();
+      toast(L("Datos personales borrados.","Persönliche Daten gelöscht."));
+      render();
+    });
+    $("#docSearch")?.addEventListener("input",e=>{
+      const q=e.target.value.trim().toLowerCase();
+      const ids=Object.keys(APP_DATA.documents).filter(id=>{
+        const d=APP_DATA.documents[id];
+        return [d.title.es,d.title.de,d.desc.es,d.desc.de,id].join(" ").toLowerCase().includes(q);
+      });
+      $("#docResults").innerHTML=docsList(ids);
+      $$(`[data-recovery]`,$("#docResults")).forEach(el=>el.addEventListener("click",()=>openRecovery(el.dataset.recovery)));
+    });
+  }
+
+  const modalEl=$("#modal");
+  modalEl?.addEventListener("click",e=>{ if(e.target===modalEl) modalEl.close(); });
+
+  window.addEventListener("popstate",e=>{
+    const st=e.state||{};
+    setRoute(ROUTES.includes(st.route)?st.route:"home",
+      {service:st.service,formService:st.formService,fromHistory:true});
+  });
+
+  $("#langBtn").addEventListener("click",()=>{
+    VOICE?.stopSpeaking();
+    state.lang=state.lang==="es"?"de":"es";saveState();render();
+  });
+  $("#settingsBtn")?.addEventListener("click",()=>setRoute("settings"));
+  $("#readBtn")?.addEventListener("click",()=>{
+    if(!VOICE) return;
+    if(VOICE.isSpeaking()) VOICE.stopSpeaking();
+    else VOICE.readCurrentView();
+  });
+  $("#homeBtn").addEventListener("click",()=>setRoute("home"));
+
+  $$(".nav-btn").forEach(b=>b.addEventListener("click",()=>{
+    // "Mehr" ist keine Route, sondern ein Auswahl-Sheet.
+    if(b.dataset.route==="more"){ openMoreSheet(); return; }
+    setRoute(b.dataset.route);
+  }));
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+  }
+  // Start: erst den Speicher laden, dann rendern. Vorher gibt es keinen
+  // Zustand, deshalb ist der Bootvorgang asynchron.
+  (async function boot(){
+    try{
+      await Storage.init({
+        onError:info=>{ storageAlert=info; try{ render(); }catch(_){} },
+        onIdleWipe:()=>{
+          liveFiles.forEach(x=>{ if(x.url) URL.revokeObjectURL(x.url); });
+          liveFiles.clear(); releaseOcrWorker();
+          formValues=Storage.personal.formValues;
+          docSession=Storage.personal.docSession;
+          FEATURES?.rebind();
+          toast(L("Datos personales borrados por inactividad.","Persönliche Daten wegen Inaktivität gelöscht."));
+          render();
+        }
+      });
+    }catch(err){ console.error("Storage init:",err); }
+
+    bindStorageObjects();
+    FEATURES?.rebind();
+
+    const hashRoute=(location.hash||"").replace("#","");
+    if(ROUTES.includes(hashRoute)) state.route=hashRoute;
+    try{ history.replaceState({route:state.route,service:state.service,formService:state.formService},"",`#${state.route}`); }catch(_){}
+    render();
+
+    // Bei "geteiltes Gerät" den Inaktivitaets-Zaehler bei Bedienung zuruecksetzen.
+    ["pointerdown","keydown"].forEach(ev=>window.addEventListener(ev,()=>Storage.touch(),{passive:true}));
+    window.addEventListener("pagehide",()=>{ try{ Storage.flush(true); }catch(_){} });
+  })();
+})();
+
+PUENTE_EOF_app_js
+
+mkdir -p "$(dirname 'data.js')"
+cat > 'data.js' <<'PUENTE_EOF_data_js'
+
+const APP_DATA = {
+  meta:{updated:"2026-09-05",version:"0.9.0"},
+  ui:{
+    es:{
+      navHome:"Inicio",navAssistant:"Asistente",navCase:"Caso",navDeadlines:"Plazos",navMore:"Más",navAdvice:"Asesoría",navDocs:"Documentos",navLost:"Perdidos",navProgress:"Progreso",
+      heroTitle:"Menos barreras. Más claridad.",
